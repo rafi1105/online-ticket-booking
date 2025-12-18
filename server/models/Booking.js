@@ -3,13 +3,45 @@ const mongoose = require('mongoose');
 const bookingSchema = new mongoose.Schema(
   {
     userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: true
+    },
+    userEmail: {
+      type: String,
+      required: true
+    },
+    userName: {
+      type: String
     },
     ticketId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Ticket',
+      required: true
+    },
+    ticketTitle: {
+      type: String,
+      required: true
+    },
+    ticketImage: {
+      type: String
+    },
+    transportType: {
+      type: String
+    },
+    from: {
+      type: String,
+      required: true
+    },
+    to: {
+      type: String,
+      required: true
+    },
+    departureDate: {
+      type: String,
+      required: true
+    },
+    departureTime: {
+      type: String,
       required: true
     },
     numberOfSeats: {
@@ -17,26 +49,26 @@ const bookingSchema = new mongoose.Schema(
       required: true,
       min: 1
     },
+    pricePerSeat: {
+      type: Number,
+      required: true
+    },
     totalPrice: {
       type: Number,
       required: true
     },
-    passengerDetails: {
-      name: String,
-      phone: String,
-      email: String
-    },
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'cancelled', 'completed'],
+      enum: ['pending', 'accepted', 'rejected', 'paid'],
       default: 'pending'
     },
-    paymentStatus: {
-      type: String,
-      enum: ['pending', 'paid', 'refunded'],
-      default: 'pending'
+    paymentId: {
+      type: String
     },
-    bookingDate: {
+    paidAt: {
+      type: Date
+    },
+    bookedAt: {
       type: Date,
       default: Date.now
     }

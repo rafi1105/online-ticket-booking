@@ -8,8 +8,8 @@ const { verifyToken } = require('../middleware/authMiddleware');
 router.get('/', verifyToken, async (req, res) => {
   try {
     const bookings = await Booking.find()
-      .populate('userId', 'name email')
-      .populate('ticketId');
+      .populate('ticketId')
+      .sort({ createdAt: -1 });
     res.json(bookings);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -33,6 +33,23 @@ router.get('/user/:userId', verifyToken, async (req, res) => {
   }
 });
 
+// Get bookings by vendor (for vendors to see booking requests)
+router.get('/vendor/:vendorId', verifyToken, async (req, res) => {
+  try {
+    // Get all tickets by this vendor
+    const vendorTickets = await Ticket.find({ vendorId: req.params.vendorId });
+    const ticketIds = vendorTickets.map(t => t._id);
+    
+    // Get all bookings for these tickets
+    const bookings = await Booking.find({ ticketId: { $in: ticketIds } })
+      .populate('ticketId')
+      .sort({ createdAt: -1 });
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Create booking (requires authentication)
 router.post('/', verifyToken, async (req, res) => {
   try {
@@ -48,13 +65,25 @@ router.post('/', verifyToken, async (req, res) => {
       return res.status(400).json({ error: 'Not enough seats available' });
     }
 
-    // Create booking
-    const booking = new Booking(req.body);
+    // Create booking with all required fields
+    const booking = new Booking({
+      ...req.body,
+      userId: req.user.uid,
+      userEmail: req.user.email || req.body.userEmail,
+      userName: req.user.name || req.body.userName,
+      ticketTitle: ticket.title,
+      ticketImage: ticket.image,
+      transportType: ticket.type,
+      from: ticket.from,
+      to: ticket.to,
+      departureDate: ticket.departureDate,
+      departureTime: ticket.departureTime,
+      pricePerSeat: ticket.price,
+      totalPrice: ticket.price * numberOfSeats,
+      status: 'pending'
+    });
+    
     await booking.save();
-
-    // Update available seats
-    ticket.availableSeats -= numberOfSeats;
-    await ticket.save();
 
     res.status(201).json(booking);
   } catch (error) {

@@ -7,6 +7,7 @@ import {
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import PaymentModal from '../../components/PaymentModal';
+import api from '../../utils/api';
 
 const MyBookings = () => {
   const { user } = useContext(AuthContext);
@@ -15,113 +16,43 @@ const MyBookings = () => {
   const [countdowns, setCountdowns] = useState({});
   const [paymentModal, setPaymentModal] = useState({ isOpen: false, booking: null });
 
-  // Sample booking data (would come from API)
+  // Fetch bookings from API
   useEffect(() => {
-    // Simulating API call
-    const sampleBookings = [
-      {
-        id: 1,
-        ticketId: 'TKT001',
-        title: 'Premium AC Coach',
-        image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80',
-        from: 'Dhaka',
-        to: 'Chittagong',
-        transportType: 'Bus',
-        departureDate: 'Dec 25, 2025',
-        departureTime: '10:00 AM',
-        quantity: 2,
-        unitPrice: 800,
-        totalPrice: 1600,
-        status: 'pending',
-        bookedAt: '2025-12-18T10:30:00Z'
-      },
-      {
-        id: 2,
-        ticketId: 'TKT002',
-        title: 'Express Train Service',
-        image: 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
-        from: 'Dhaka',
-        to: 'Sylhet',
-        transportType: 'Train',
-        departureDate: 'Dec 28, 2025',
-        departureTime: '08:00 AM',
-        quantity: 1,
-        unitPrice: 600,
-        totalPrice: 600,
-        status: 'accepted',
-        bookedAt: '2025-12-17T14:20:00Z'
-      },
-      {
-        id: 3,
-        ticketId: 'TKT003',
-        title: 'Domestic Flight Economy',
-        image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80',
-        from: 'Dhaka',
-        to: "Cox's Bazar",
-        transportType: 'Plane',
-        departureDate: 'Dec 30, 2025',
-        departureTime: '02:00 PM',
-        quantity: 3,
-        unitPrice: 3500,
-        totalPrice: 10500,
-        status: 'paid',
-        bookedAt: '2025-12-15T09:00:00Z'
-      },
-      {
-        id: 4,
-        ticketId: 'TKT004',
-        title: 'Deluxe Cabin Launch',
-        image: 'https://images.unsplash.com/photo-1540946485063-a40da27545f8?w=800&q=80',
-        from: 'Dhaka',
-        to: 'Barisal',
-        transportType: 'Launch',
-        departureDate: 'Dec 22, 2025',
-        departureTime: '11:00 PM',
-        quantity: 2,
-        unitPrice: 500,
-        totalPrice: 1000,
-        status: 'rejected',
-        bookedAt: '2025-12-10T16:45:00Z'
-      },
-      {
-        id: 5,
-        ticketId: 'TKT005',
-        title: 'Night Coach Return',
-        image: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=800&q=80',
-        from: 'Chittagong',
-        to: 'Dhaka',
-        transportType: 'Bus',
-        departureDate: 'Jan 02, 2026',
-        departureTime: '09:00 PM',
-        quantity: 1,
-        unitPrice: 850,
-        totalPrice: 850,
-        status: 'accepted',
-        bookedAt: '2025-12-16T11:30:00Z'
-      },
-      {
-        id: 6,
-        ticketId: 'TKT006',
-        title: 'Intercity Express',
-        image: 'https://images.unsplash.com/photo-1517093602198-530d8e1e859a?w=800&q=80',
-        from: 'Dhaka',
-        to: 'Rajshahi',
-        transportType: 'Train',
-        departureDate: 'Jan 05, 2026',
-        departureTime: '07:00 AM',
-        quantity: 4,
-        unitPrice: 550,
-        totalPrice: 2200,
-        status: 'pending',
-        bookedAt: '2025-12-18T08:00:00Z'
+    const fetchBookings = async () => {
+      if (!user?.uid) {
+        setLoading(false);
+        return;
       }
-    ];
 
-    setTimeout(() => {
-      setBookings(sampleBookings);
-      setLoading(false);
-    }, 500);
-  }, []);
+      try {
+        const response = await api.get(`/bookings/user/${user.uid}`);
+        const bookingsData = response.data.map(booking => ({
+          id: booking._id,
+          ticketId: booking.ticketId?._id || booking.ticketId,
+          title: booking.ticketTitle || booking.ticketId?.title || 'Ticket',
+          image: booking.ticketImage || booking.ticketId?.image || 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80',
+          from: booking.from,
+          to: booking.to,
+          transportType: booking.transportType || booking.ticketId?.type || 'Bus',
+          departureDate: booking.departureDate,
+          departureTime: booking.departureTime,
+          quantity: booking.numberOfSeats,
+          unitPrice: booking.pricePerSeat,
+          totalPrice: booking.totalPrice,
+          status: booking.status,
+          bookedAt: booking.bookedAt || booking.createdAt
+        }));
+        setBookings(bookingsData);
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+        toast.error('Failed to load bookings');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBookings();
+  }, [user]);
 
   // Calculate countdown for each booking
   useEffect(() => {

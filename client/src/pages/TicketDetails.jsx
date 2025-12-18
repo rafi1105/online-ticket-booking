@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router';
 import { AuthContext } from '../providers/AuthProvider';
 import { FaBus, FaTrain, FaShip, FaPlane, FaMapMarkerAlt, FaClock, FaCalendarAlt, FaUsers, FaStar, FaTicketAlt } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import api from '../utils/api';
 
 const TicketDetails = () => {
   const { id } = useParams();
@@ -137,15 +138,9 @@ const TicketDetails = () => {
       };
 
       // Save booking to database (API call)
-      const response = await fetch('http://localhost:5000/bookings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(booking)
-      });
+      const response = await api.post('/bookings', booking);
 
-      if (!response.ok) {
+      if (response.status !== 200 && response.status !== 201) {
         throw new Error('Failed to save booking');
       }
 
@@ -187,14 +182,13 @@ const TicketDetails = () => {
                   alt="Ticket"
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute top-4 left-4 flex gap-2">
+                <div className="absolute top-4 left-6 flex gap-2">
                   <span className="badge badge-primary flex items-center gap-2 py-2 px-4 text-base">
                     {getTypeIcon(ticket.type)}
                     {ticket.type}
                   </span>
                   <span className="badge bg-white text-gray-800 py-2 px-4 text-base shadow-md">
-                    <FaStar className="text-yellow-500 mr-1" />
-                    {ticket.rating} ({ticket.reviews} reviews)
+                    <FaStar className="text-yellow-500 mr-1" /> {ticket.rating} ({ticket.reviews} reviews)
                   </span>
                 </div>
               </div>
