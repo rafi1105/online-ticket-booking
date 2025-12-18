@@ -88,7 +88,7 @@ const Navbar = () => {
               </svg>
             </div>
             <div>
-              <span className="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">
+              <span className="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400" style={{ fontFamily: "'Borel', cursive" }}>
                 TicketBari
               </span>
               <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1 hidden sm:block">Book Your Journey</p>

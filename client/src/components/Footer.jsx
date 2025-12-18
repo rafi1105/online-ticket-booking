@@ -22,7 +22,7 @@ const Footer = () => {
                   <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
                 </svg>
               </div>
-              <span className="text-2xl font-bold text-white">TicketBari</span>
+              <span className="text-2xl font-bold text-white" style={{ fontFamily: "'Borel', cursive" }}>TicketBari</span>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed mb-6">
               Book bus, train, launch & flight tickets easily. Your trusted

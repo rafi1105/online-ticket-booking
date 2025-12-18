@@ -92,7 +92,7 @@ const Home = () => {
         
         <div className="container-responsive relative z-10">
           <div className="text-center animate-fade-in max-w-4xl mx-auto">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight text-balance">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight text-balance" style={{ fontFamily: "'Borel', cursive" }}>
               Your Journey Starts Here
             </h1>
             <p className="text-lg sm:text-xl md:text-2xl mb-10 max-w-3xl mx-auto leading-relaxed text-white/90">
