@@ -4,6 +4,7 @@ import {
   FaHourglass, FaBus, FaTrain, FaShip, FaPlane, FaEye
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import api from '../../../utils/api';
 
 const ManageTickets = () => {
   const [tickets, setTickets] = useState([]);
@@ -14,118 +15,23 @@ const ManageTickets = () => {
   const [rejectReason, setRejectReason] = useState('');
   const [viewModal, setViewModal] = useState({ show: false, ticket: null });
 
-  // Sample ticket data
+  // Fetch tickets from API
   useEffect(() => {
-    const sampleTickets = [
-      {
-        id: 1,
-        title: 'Premium AC Coach',
-        image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80',
-        from: 'Dhaka',
-        to: 'Chittagong',
-        transportType: 'Bus',
-        price: 800,
-        quantity: 40,
-        departureDate: '2025-12-25',
-        departureTime: '10:00',
-        perks: ['AC', 'WiFi', 'TV'],
-        vendorName: 'Ahmed Transport',
-        vendorEmail: 'ahmed@transport.com',
-        status: 'pending',
-        createdAt: '2025-12-18T10:00:00Z'
-      },
-      {
-        id: 2,
-        title: 'Express Train Service',
-        image: 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
-        from: 'Dhaka',
-        to: 'Sylhet',
-        transportType: 'Train',
-        price: 600,
-        quantity: 60,
-        departureDate: '2025-12-28',
-        departureTime: '08:00',
-        perks: ['AC', 'Food'],
-        vendorName: 'Railway Services',
-        vendorEmail: 'railway@services.com',
-        status: 'pending',
-        createdAt: '2025-12-17T14:00:00Z'
-      },
-      {
-        id: 3,
-        title: 'Deluxe Cabin Launch',
-        image: 'https://images.unsplash.com/photo-1540946485063-a40da27545f8?w=800&q=80',
-        from: 'Dhaka',
-        to: 'Barisal',
-        transportType: 'Launch',
-        price: 500,
-        quantity: 30,
-        departureDate: '2025-12-30',
-        departureTime: '23:00',
-        perks: ['Cabin', 'Food'],
-        vendorName: 'Water Transport',
-        vendorEmail: 'water@transport.com',
-        status: 'pending',
-        createdAt: '2025-12-16T09:00:00Z'
-      },
-      {
-        id: 4,
-        title: 'Morning Flight Special',
-        image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80',
-        from: 'Dhaka',
-        to: "Cox's Bazar",
-        transportType: 'Plane',
-        price: 3500,
-        quantity: 20,
-        departureDate: '2026-01-05',
-        departureTime: '06:00',
-        perks: ['WiFi', 'Food', 'Entertainment'],
-        vendorName: 'BD Airlines',
-        vendorEmail: 'bd@airlines.com',
-        status: 'approved',
-        createdAt: '2025-12-10T11:00:00Z'
-      },
-      {
-        id: 5,
-        title: 'Night Express Bus',
-        image: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=800&q=80',
-        from: 'Dhaka',
-        to: 'Rangpur',
-        transportType: 'Bus',
-        price: 750,
-        quantity: 35,
-        departureDate: '2026-01-10',
-        departureTime: '21:00',
-        perks: ['AC', 'Sleeper', 'Blanket'],
-        vendorName: 'Green Line',
-        vendorEmail: 'green@line.com',
-        status: 'rejected',
-        rejectionReason: 'Price seems too high for this route',
-        createdAt: '2025-12-08T08:00:00Z'
-      },
-      {
-        id: 6,
-        title: 'Economy Bus Service',
-        image: 'https://images.unsplash.com/photo-1557223562-6c77ef16210f?w=800&q=80',
-        from: 'Chittagong',
-        to: 'Dhaka',
-        transportType: 'Bus',
-        price: 550,
-        quantity: 45,
-        departureDate: '2026-01-12',
-        departureTime: '07:00',
-        perks: ['AC'],
-        vendorName: 'Shyamoli Paribahan',
-        vendorEmail: 'shyamoli@bus.com',
-        status: 'pending',
-        createdAt: '2025-12-18T08:00:00Z'
+    const fetchTickets = async () => {
+      try {
+        setLoading(true);
+        // Fetch all tickets including pending ones for admin
+        const response = await api.get('/tickets?status=all');
+        setTickets(response.data);
+      } catch (error) {
+        console.error('Error fetching tickets:', error);
+        toast.error('Failed to load tickets');
+      } finally {
+        setLoading(false);
       }
-    ];
+    };
 
-    setTimeout(() => {
-      setTickets(sampleTickets);
-      setLoading(false);
-    }, 500);
+    fetchTickets();
   }, []);
 
   const getTypeIcon = (type) => {
@@ -162,24 +68,39 @@ const ManageTickets = () => {
     return configs[status] || configs.pending;
   };
 
-  const handleApprove = (ticketId) => {
-    setTickets(prev => prev.map(t => 
-      t.id === ticketId ? { ...t, status: 'approved' } : t
-    ));
-    toast.success('Ticket approved! It will now be visible on the All Tickets page.');
+  const handleApprove = async (ticketId) => {
+    try {
+      await api.put(`/tickets/${ticketId}`, { status: 'approved' });
+      setTickets(prev => prev.map(t => 
+        t._id === ticketId ? { ...t, status: 'approved' } : t
+      ));
+      toast.success('Ticket approved! It will now be visible on the All Tickets page.');
+    } catch (error) {
+      console.error('Error approving ticket:', error);
+      toast.error('Failed to approve ticket');
+    }
   };
 
-  const handleReject = () => {
+  const handleReject = async () => {
     if (!rejectReason.trim()) {
       toast.error('Please provide a reason for rejection');
       return;
     }
-    setTickets(prev => prev.map(t => 
-      t.id === rejectModal.ticketId ? { ...t, status: 'rejected', rejectionReason: rejectReason } : t
-    ));
-    setRejectModal({ show: false, ticketId: null });
-    setRejectReason('');
-    toast.success('Ticket rejected.');
+    try {
+      await api.put(`/tickets/${rejectModal.ticketId}`, { 
+        status: 'rejected', 
+        rejectionReason: rejectReason 
+      });
+      setTickets(prev => prev.map(t => 
+        t._id === rejectModal.ticketId ? { ...t, status: 'rejected', rejectionReason: rejectReason } : t
+      ));
+      setRejectModal({ show: false, ticketId: null });
+      setRejectReason('');
+      toast.success('Ticket rejected.');
+    } catch (error) {
+      console.error('Error rejecting ticket:', error);
+      toast.error('Failed to reject ticket');
+    }
   };
 
   const formatDate = (dateString) => {
@@ -329,7 +250,7 @@ const ManageTickets = () => {
 
                   return (
                     <tr 
-                      key={ticket.id}
+                      key={ticket._id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                     >
                       {/* Ticket Info */}
@@ -361,15 +282,15 @@ const ManageTickets = () => {
                       {/* Type */}
                       <td className="px-6 py-4 text-center">
                         <span className="inline-flex items-center gap-1">
-                          {getTypeIcon(ticket.transportType)}
-                          <span className="text-sm text-gray-600 dark:text-gray-300">{ticket.transportType}</span>
+                          {getTypeIcon(ticket.type)}
+                          <span className="text-sm text-gray-600 dark:text-gray-300">{ticket.type}</span>
                         </span>
                       </td>
 
                       {/* Price */}
                       <td className="px-6 py-4 text-right">
                         <span className="font-bold text-blue-600">৳{ticket.price}</span>
-                        <p className="text-xs text-gray-500">{ticket.quantity} seats</p>
+                        <p className="text-xs text-gray-500">{ticket.totalSeats || ticket.availableSeats} seats</p>
                       </td>
 
                       {/* Vendor */}
@@ -399,14 +320,14 @@ const ManageTickets = () => {
                           {ticket.status === 'pending' && (
                             <>
                               <button
-                                onClick={() => handleApprove(ticket.id)}
+                                onClick={() => handleApprove(ticket._id)}
                                 className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm flex items-center gap-1 transition-colors"
                               >
                                 <FaCheckCircle />
                                 Approve
                               </button>
                               <button
-                                onClick={() => setRejectModal({ show: true, ticketId: ticket.id })}
+                                onClick={() => setRejectModal({ show: true, ticketId: ticket._id })}
                                 className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium text-sm flex items-center gap-1 transition-colors"
                               >
                                 <FaTimesCircle />
@@ -508,7 +429,7 @@ const ManageTickets = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Transport</p>
-                  <p className="font-semibold text-gray-800 dark:text-white">{viewModal.ticket.transportType}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{viewModal.ticket.type}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Price</p>
@@ -516,7 +437,7 @@ const ManageTickets = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Quantity</p>
-                  <p className="font-semibold text-gray-800 dark:text-white">{viewModal.ticket.quantity} seats</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{viewModal.ticket.totalSeats || viewModal.ticket.availableSeats} seats</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Departure Date</p>
@@ -528,11 +449,11 @@ const ManageTickets = () => {
                 </div>
               </div>
               <div className="mb-6">
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Perks</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Features</p>
                 <div className="flex flex-wrap gap-2">
-                  {viewModal.ticket.perks.map((perk, idx) => (
+                  {(viewModal.ticket.features || []).map((feature, idx) => (
                     <span key={idx} className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-sm">
-                      {perk}
+                      {feature}
                     </span>
                   ))}
                 </div>

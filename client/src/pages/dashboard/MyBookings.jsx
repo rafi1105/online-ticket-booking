@@ -145,11 +145,22 @@ const MyBookings = () => {
     });
   };
 
-  const handlePaymentSuccess = (paymentIntent) => {
-    // Update booking status to paid
-    setBookings(prev => prev.map(b => 
-      b.id === paymentModal.booking.id ? { ...b, status: 'paid' } : b
-    ));
+  const handlePaymentSuccess = async (paymentIntent) => {
+    try {
+      // Update booking status in database
+      await api.put(`/bookings/${paymentModal.booking.id}`, { 
+        status: 'paid',
+        paymentId: paymentIntent.id,
+        paidAt: new Date().toISOString()
+      });
+      
+      // Update local state
+      setBookings(prev => prev.map(b => 
+        b.id === paymentModal.booking.id ? { ...b, status: 'paid' } : b
+      ));
+    } catch (error) {
+      console.error('Error updating booking:', error);
+    }
     setPaymentModal({ isOpen: false, booking: null });
   };
 

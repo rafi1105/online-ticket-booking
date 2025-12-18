@@ -14,41 +14,59 @@ const TicketDetails = () => {
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isDeparturePassed, setIsDeparturePassed] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
+  const [ticket, setTicket] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Sample ticket data - Replace with API call
-  const ticket = {
-    id: 1,
-    type: 'Bus',
-    from: 'Dhaka',
-    to: 'Chittagong',
-    departureDate: 'December 20, 2025',
-    departureTime: '10:00 AM',
-    arrivalTime: '05:00 PM',
-    duration: '7 hours',
-    price: 800,
-    availableSeats: 25,
-    totalSeats: 40,
-    rating: 4.8,
-    reviews: 124,
-    features: ['AC', 'WiFi', 'Reclining Seats', 'TV', 'Charging Port'],
-    vendor: 'Green Line Paribahan',
-    vendorRating: 4.9,
-    images: [
-      'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80',
-      'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=800&q=80',
-      'https://images.unsplash.com/photo-1494515843206-f3117d3f51b7?w=800&q=80'
-    ],
-    description: 'Experience comfortable journey with premium AC bus service. Equipped with modern amenities including WiFi, TV entertainment, and spacious reclining seats.',
-    policies: [
-      'Cancellation allowed up to 24 hours before departure',
-      'Carry valid ID proof during journey',
-      'No refund on no-show',
-      'Children below 5 years travel free'
-    ]
-  };
+  // Fetch ticket data from API
+  useEffect(() => {
+    const fetchTicket = async () => {
+      try {
+        const response = await api.get(`/tickets/${id}`);
+        const ticketData = response.data;
+        setTicket({
+          id: ticketData._id,
+          type: ticketData.type,
+          title: ticketData.title,
+          from: ticketData.from,
+          to: ticketData.to,
+          departureDate: ticketData.departureDate,
+          departureTime: ticketData.departureTime,
+          arrivalTime: ticketData.arrivalTime || 'N/A',
+          duration: ticketData.duration || 'N/A',
+          price: ticketData.price,
+          availableSeats: ticketData.availableSeats,
+          totalSeats: ticketData.totalSeats || ticketData.availableSeats,
+          rating: ticketData.rating || 4.5,
+          reviews: ticketData.reviews || 0,
+          features: ticketData.features || ['AC', 'WiFi'],
+          vendor: ticketData.vendorName || 'Vendor',
+          vendorId: ticketData.vendorId,
+          vendorRating: ticketData.vendorRating || 4.5,
+          image: ticketData.image,
+          images: ticketData.images || [ticketData.image],
+          description: ticketData.description || 'Premium travel experience with modern amenities.',
+          policies: ticketData.policies || [
+            'Cancellation allowed up to 24 hours before departure',
+            'Carry valid ID proof during journey'
+          ]
+        });
+      } catch (error) {
+        console.error('Error fetching ticket:', error);
+        toast.error('Failed to load ticket details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchTicket();
+    }
+  }, [id]);
 
   // Countdown timer
   useEffect(() => {
+    if (!ticket) return;
+    
     // Use the ticket's actual departure date
     const targetDate = new Date(`${ticket.departureDate} ${ticket.departureTime}`).getTime();
 
@@ -72,7 +90,28 @@ const TicketDetails = () => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [ticket.departureDate, ticket.departureTime]);
+  }, [ticket]);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Not found state
+  if (!ticket) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Ticket Not Found</h2>
+          <p className="text-gray-600 dark:text-gray-400">The ticket you're looking for doesn't exist.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Check if ticket is sold out
   const isSoldOut = ticket.availableSeats <= 0;
@@ -235,7 +274,7 @@ const TicketDetails = () => {
                 </div>
                 <div className="flex-1 mx-6">
                   <div className="flex items-center justify-center gap-2">
-                    <div className="h-0.5 flex-1 bg-gradient-to-r from-blue-600 to-purple-600"></div>
+                    <div className="h-0.5 flex-1 bg-gradient-to-r from-blue-600 to-blue-950"></div>
                     <span className="badge badge-primary">{ticket.duration}</span>
                     <div className="h-0.5 flex-1 bg-gradient-to-r from-purple-600 to-blue-600"></div>
                   </div>

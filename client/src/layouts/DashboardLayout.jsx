@@ -90,7 +90,7 @@ const DashboardLayout = () => {
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } lg:translate-x-0 border-r border-gray-200/50 dark:border-gray-700/50`}>
         {/* Sidebar Header */}
-        <div className="h-16 lg:h-20 flex items-center justify-between px-4 lg:px-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-600 to-purple-600">
+        <div className="h-16 lg:h-20 flex items-center justify-between px-4 lg:px-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-600 to-blue-950">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white font-bold text-lg shadow-lg">
               🎫

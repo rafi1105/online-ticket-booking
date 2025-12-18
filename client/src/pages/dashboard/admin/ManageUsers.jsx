@@ -4,6 +4,7 @@ import {
   FaBan, FaCheckCircle
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import api from '../../../utils/api';
 
 const ManageUsers = () => {
   const [users, setUsers] = useState([]);
@@ -12,79 +13,32 @@ const ManageUsers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [fraudModal, setFraudModal] = useState({ show: false, user: null });
 
-  // Sample user data
+  // Fetch users from API
   useEffect(() => {
-    const sampleUsers = [
-      {
-        id: 1,
-        name: 'John Doe',
-        email: 'john@example.com',
-        photo: 'https://ui-avatars.com/api/?name=John+Doe&background=3B82F6&color=fff',
-        role: 'user',
-        isFraud: false
-      },
-      {
-        id: 2,
-        name: 'Ahmed Transport',
-        email: 'ahmed@transport.com',
-        photo: 'https://ui-avatars.com/api/?name=Ahmed+Transport&background=8B5CF6&color=fff',
-        role: 'vendor',
-        isFraud: false
-      },
-      {
-        id: 3,
-        name: 'Jane Smith',
-        email: 'jane@example.com',
-        photo: 'https://ui-avatars.com/api/?name=Jane+Smith&background=10B981&color=fff',
-        role: 'user',
-        isFraud: false
-      },
-      {
-        id: 4,
-        name: 'Railway Services',
-        email: 'railway@services.com',
-        photo: 'https://ui-avatars.com/api/?name=Railway+Services&background=F59E0B&color=fff',
-        role: 'vendor',
-        isFraud: false
-      },
-      {
-        id: 5,
-        name: 'Mike Johnson',
-        email: 'mike@example.com',
-        photo: 'https://ui-avatars.com/api/?name=Mike+Johnson&background=EF4444&color=fff',
-        role: 'user',
-        isFraud: false
-      },
-      {
-        id: 6,
-        name: 'Super Admin',
-        email: 'admin@ticketbooking.com',
-        photo: 'https://ui-avatars.com/api/?name=Super+Admin&background=DC2626&color=fff',
-        role: 'admin',
-        isFraud: false
-      },
-      {
-        id: 7,
-        name: 'Green Line',
-        email: 'green@line.com',
-        photo: 'https://ui-avatars.com/api/?name=Green+Line&background=059669&color=fff',
-        role: 'vendor',
-        isFraud: true // Already marked as fraud
-      },
-      {
-        id: 8,
-        name: 'Sarah Wilson',
-        email: 'sarah@example.com',
-        photo: 'https://ui-avatars.com/api/?name=Sarah+Wilson&background=EC4899&color=fff',
-        role: 'user',
-        isFraud: false
+    const fetchUsers = async () => {
+      try {
+        const response = await api.get('/users');
+        const usersData = response.data.map(user => ({
+          id: user._id,
+          odlId: user._id,
+          uid: user.uid,
+          name: user.name || user.displayName || 'User',
+          email: user.email,
+          photo: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=3B82F6&color=fff`,
+          role: user.role || 'user',
+          isFraud: user.isFraud || false,
+          createdAt: user.createdAt
+        }));
+        setUsers(usersData);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        toast.error('Failed to load users');
+      } finally {
+        setLoading(false);
       }
-    ];
+    };
 
-    setTimeout(() => {
-      setUsers(sampleUsers);
-      setLoading(false);
-    }, 500);
+    fetchUsers();
   }, []);
 
   const getRoleConfig = (role) => {
@@ -111,35 +65,59 @@ const ManageUsers = () => {
     return configs[role] || configs.user;
   };
 
-  const handleMakeAdmin = (userId) => {
-    setUsers(prev => prev.map(u => 
-      u.id === userId ? { ...u, role: 'admin' } : u
-    ));
-    toast.success('User promoted to Admin!');
-  };
-
-  const handleMakeVendor = (userId) => {
-    setUsers(prev => prev.map(u => 
-      u.id === userId ? { ...u, role: 'vendor' } : u
-    ));
-    toast.success('User promoted to Vendor!');
-  };
-
-  const handleMarkAsFraud = () => {
-    if (fraudModal.user) {
+  const handleMakeAdmin = async (userId) => {
+    try {
+      await api.put(`/users/${userId}`, { role: 'admin' });
       setUsers(prev => prev.map(u => 
-        u.id === fraudModal.user.id ? { ...u, isFraud: true } : u
+        u.id === userId ? { ...u, role: 'admin' } : u
       ));
-      toast.success(`${fraudModal.user.name} marked as fraud. All tickets hidden and future additions blocked.`);
-      setFraudModal({ show: false, user: null });
+      toast.success('User promoted to Admin!');
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      toast.error('Failed to update user role');
     }
   };
 
-  const handleUnmarkFraud = (userId) => {
-    setUsers(prev => prev.map(u => 
-      u.id === userId ? { ...u, isFraud: false } : u
-    ));
-    toast.success('Fraud status removed. Vendor can now add tickets again.');
+  const handleMakeVendor = async (userId) => {
+    try {
+      await api.put(`/users/${userId}`, { role: 'vendor' });
+      setUsers(prev => prev.map(u => 
+        u.id === userId ? { ...u, role: 'vendor' } : u
+      ));
+      toast.success('User promoted to Vendor!');
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      toast.error('Failed to update user role');
+    }
+  };
+
+  const handleMarkAsFraud = async () => {
+    if (fraudModal.user) {
+      try {
+        await api.put(`/users/${fraudModal.user.id}`, { isFraud: true });
+        setUsers(prev => prev.map(u => 
+          u.id === fraudModal.user.id ? { ...u, isFraud: true } : u
+        ));
+        toast.success(`${fraudModal.user.name} marked as fraud. All tickets hidden and future additions blocked.`);
+        setFraudModal({ show: false, user: null });
+      } catch (error) {
+        console.error('Error marking user as fraud:', error);
+        toast.error('Failed to mark user as fraud');
+      }
+    }
+  };
+
+  const handleUnmarkFraud = async (userId) => {
+    try {
+      await api.put(`/users/${userId}`, { isFraud: false });
+      setUsers(prev => prev.map(u => 
+        u.id === userId ? { ...u, isFraud: false } : u
+      ));
+      toast.success('Fraud status removed. Vendor can now add tickets again.');
+    } catch (error) {
+      console.error('Error removing fraud status:', error);
+      toast.error('Failed to remove fraud status');
+    }
   };
 
   // Filter and search

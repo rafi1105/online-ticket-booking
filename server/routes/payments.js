@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { verifyToken } = require('../middleware/authMiddleware');
 
 // Create Payment Intent
 router.post('/create-payment-intent', async (req, res) => {
@@ -47,13 +48,21 @@ router.post('/confirm-payment', async (req, res) => {
     if (paymentIntent.status === 'succeeded') {
       // Update booking status to 'paid' in database
       const Booking = require('../models/Booking');
+      const Ticket = require('../models/Ticket');
       
       if (bookingId) {
-        await Booking.findByIdAndUpdate(bookingId, {
+        const booking = await Booking.findByIdAndUpdate(bookingId, {
           status: 'paid',
           paymentId: paymentIntentId,
           paidAt: new Date()
-        });
+        }, { new: true });
+
+        // Reduce available seats on the ticket after successful payment
+        if (booking && booking.ticketId) {
+          await Ticket.findByIdAndUpdate(booking.ticketId, {
+            $inc: { availableSeats: -booking.numberOfSeats }
+          });
+        }
       }
 
       res.json({ 
@@ -75,7 +84,7 @@ router.post('/confirm-payment', async (req, res) => {
 });
 
 // Get Payment History for a user
-router.get('/history/:userEmail', async (req, res) => {
+router.get('/history/:userEmail', verifyToken, async (req, res) => {
   try {
     const { userEmail } = req.params;
     

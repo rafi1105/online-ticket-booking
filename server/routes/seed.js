@@ -63,4 +63,37 @@ router.post('/demo-accounts', async (req, res) => {
   }
 });
 
+// Update user role by email
+router.post('/update-role', async (req, res) => {
+  try {
+    const { email, role } = req.body;
+    
+    if (!email || !role) {
+      return res.status(400).json({ error: 'Email and role are required' });
+    }
+    
+    if (!['user', 'vendor', 'admin'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
+    
+    const user = await User.findOneAndUpdate(
+      { email },
+      { role },
+      { new: true }
+    );
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json({
+      message: `User ${email} role updated to ${role}`,
+      user
+    });
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

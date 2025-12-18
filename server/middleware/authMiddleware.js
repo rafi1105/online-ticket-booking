@@ -1,20 +1,34 @@
 const admin = require('firebase-admin');
 
+// Track if Firebase Admin is initialized
+let firebaseInitialized = false;
+
 // Initialize Firebase Admin SDK
-// In production, use environment variables for credentials
-// For development, you can use the service account JSON file
 try {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-  });
-  console.log('Firebase Admin initialized successfully');
+  if (!admin.apps.length) {
+    admin.initializeApp({
+      projectId: process.env.FIREBASE_PROJECT_ID || 'online-ticket-bookings'
+    });
+    firebaseInitialized = true;
+    console.log('Firebase Admin initialized with project:', process.env.FIREBASE_PROJECT_ID || 'online-ticket-bookings');
+  } else {
+    firebaseInitialized = true;
+  }
 } catch (error) {
   console.log('Firebase Admin initialization error:', error.message);
 }
+
+// Helper function to decode JWT without verification (for development)
+const decodeJwtPayload = (token) => {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = Buffer.from(parts[1], 'base64').toString('utf8');
+    return JSON.parse(payload);
+  } catch (error) {
+    return null;
+  }
+};
 
 // Middleware to verify Firebase ID token
 const verifyToken = async (req, res, next) => {
@@ -39,15 +53,29 @@ const verifyToken = async (req, res, next) => {
       });
     }
 
-    // Verify token with Firebase Admin
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    
-    // Add user info to request object
-    req.user = {
-      uid: decodedToken.uid,
-      email: decodedToken.email,
-      emailVerified: decodedToken.email_verified,
-    };
+    // If Firebase Admin is initialized, verify token properly
+    if (firebaseInitialized) {
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      req.user = {
+        uid: decodedToken.uid,
+        email: decodedToken.email,
+        emailVerified: decodedToken.email_verified,
+      };
+    } else {
+      // Development mode: decode JWT payload without verification
+      const decoded = decodeJwtPayload(token);
+      if (!decoded || !decoded.user_id) {
+        return res.status(401).json({ 
+          error: 'Unauthorized', 
+          message: 'Invalid token' 
+        });
+      }
+      req.user = {
+        uid: decoded.user_id,
+        email: decoded.email,
+        emailVerified: decoded.email_verified,
+      };
+    }
 
     next();
   } catch (error) {
@@ -74,13 +102,25 @@ const optionalAuth = async (req, res, next) => {
     
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split('Bearer ')[1];
-      const decodedToken = await admin.auth().verifyIdToken(token);
       
-      req.user = {
-        uid: decodedToken.uid,
-        email: decodedToken.email,
-        emailVerified: decodedToken.email_verified,
-      };
+      if (firebaseInitialized) {
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        req.user = {
+          uid: decodedToken.uid,
+          email: decodedToken.email,
+          emailVerified: decodedToken.email_verified,
+        };
+      } else {
+        // Development mode
+        const decoded = decodeJwtPayload(token);
+        if (decoded && decoded.user_id) {
+          req.user = {
+            uid: decoded.user_id,
+            email: decoded.email,
+            emailVerified: decoded.email_verified,
+          };
+        }
+      }
     }
     
     next();

@@ -1,6 +1,81 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import api from '../utils/api';
 
 const Home = () => {
+  const [featuredTickets, setFeaturedTickets] = useState([]);
+  const [advertisedTickets, setAdvertisedTickets] = useState([]);
+  const [latestTickets, setLatestTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    const fetchTickets = async () => {
+      try {
+        // Fetch advertised tickets for carousel
+        const advertisedResponse = await api.get('/tickets/featured/advertised');
+        const advertised = advertisedResponse.data.map(ticket => ({
+          id: ticket._id,
+          img: ticket.image || 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80',
+          title: ticket.title || `${ticket.from} to ${ticket.to}`,
+          from: ticket.from,
+          to: ticket.to,
+          type: ticket.type,
+          price: ticket.price,
+          seats: ticket.availableSeats,
+          departureDate: ticket.departureDate,
+          perks: ticket.features || ['AC', 'WiFi']
+        }));
+        setAdvertisedTickets(advertised);
+
+        // Fetch all tickets
+        const response = await api.get('/tickets');
+        const tickets = response.data.map(ticket => ({
+          id: ticket._id,
+          img: ticket.image || 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80',
+          title: ticket.title || `${ticket.from} to ${ticket.to}`,
+          type: ticket.type,
+          price: ticket.price,
+          seats: ticket.availableSeats,
+          perks: ticket.features || ['AC', 'WiFi']
+        }));
+        
+        // Split tickets for featured and latest sections
+        setFeaturedTickets(tickets.slice(0, 4));
+        setLatestTickets(tickets.slice(0, 6));
+      } catch (error) {
+        console.error('Error fetching tickets:', error);
+        // Use empty arrays if API fails
+        setAdvertisedTickets([]);
+        setFeaturedTickets([]);
+        setLatestTickets([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTickets();
+  }, []);
+
+  // Auto-slide carousel
+  useEffect(() => {
+    if (advertisedTickets.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentSlide(prev => (prev + 1) % advertisedTickets.length);
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [advertisedTickets.length]);
+
+  const nextSlide = () => {
+    setCurrentSlide(prev => (prev + 1) % advertisedTickets.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide(prev => (prev - 1 + advertisedTickets.length) % advertisedTickets.length);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       {/* Hero Section with Real Background Image */}
@@ -50,6 +125,118 @@ const Home = () => {
         </div>
       </section>
 
+      {/* Advertised Tickets Carousel */}
+      {advertisedTickets.length > 0 && (
+        <section className="py-12 md:py-16 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 dark:from-blue-800 dark:via-purple-800 dark:to-blue-900 relative overflow-hidden">
+          <div className="absolute inset-0 bg-black/10"></div>
+          <div className="container-responsive relative z-10">
+            <div className="text-center mb-8">
+              <span className="inline-block px-4 py-2 bg-yellow-400 text-yellow-900 rounded-full text-sm font-bold mb-4">
+                ⭐ Special Offers
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">Featured Tickets</h2>
+              <p className="text-white/80">Admin-selected deals you don&apos;t want to miss!</p>
+            </div>
+
+            {/* Carousel Container */}
+            <div className="relative max-w-5xl mx-auto">
+              {/* Carousel Slides */}
+              <div className="overflow-hidden rounded-2xl">
+                <div 
+                  className="flex transition-transform duration-500 ease-out"
+                  style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+                >
+                  {advertisedTickets.map((ticket) => (
+                    <div key={ticket.id} className="w-full flex-shrink-0 px-2">
+                      <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row">
+                        {/* Image */}
+                        <div className="md:w-1/2 h-64 md:h-80 relative">
+                          <img 
+                            src={ticket.img} 
+                            alt={ticket.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent"></div>
+                          <span className="absolute top-4 left-4 px-3 py-1 bg-yellow-400 text-yellow-900 rounded-full text-sm font-bold">
+                            {ticket.type}
+                          </span>
+                        </div>
+                        
+                        {/* Content */}
+                        <div className="md:w-1/2 p-6 md:p-8 flex flex-col justify-center">
+                          <h3 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-3">
+                            {ticket.title}
+                          </h3>
+                          <p className="text-gray-600 dark:text-gray-300 mb-4">
+                            {ticket.from} → {ticket.to}
+                          </p>
+                          
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {ticket.perks.slice(0, 3).map((perk, idx) => (
+                              <span key={idx} className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm">
+                                {perk}
+                              </span>
+                            ))}
+                          </div>
+                          
+                          <div className="flex items-center justify-between mt-auto">
+                            <div>
+                              <span className="text-3xl md:text-4xl font-bold text-blue-600 dark:text-blue-400">৳{ticket.price}</span>
+                              <span className="text-gray-500 dark:text-gray-400 text-sm ml-1">/person</span>
+                            </div>
+                            <Link 
+                              to={`/ticket/${ticket.id}`}
+                              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors"
+                            >
+                              Book Now
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Navigation Arrows */}
+              {advertisedTickets.length > 1 && (
+                <>
+                  <button 
+                    onClick={prevSlide}
+                    className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-6 w-12 h-12 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors z-10"
+                  >
+                    <FaChevronLeft />
+                  </button>
+                  <button 
+                    onClick={nextSlide}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-6 w-12 h-12 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors z-10"
+                  >
+                    <FaChevronRight />
+                  </button>
+                </>
+              )}
+
+              {/* Dots Indicator */}
+              {advertisedTickets.length > 1 && (
+                <div className="flex justify-center gap-2 mt-6">
+                  {advertisedTickets.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentSlide(idx)}
+                      className={`w-3 h-3 rounded-full transition-all ${
+                        idx === currentSlide 
+                          ? 'bg-white w-8' 
+                          : 'bg-white/50 hover:bg-white/70'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Advertisement Section - Featured Tickets */}
       <section className="section-spacing bg-white dark:bg-gray-800 transition-colors relative overflow-hidden">
         <div className="absolute inset-0 pattern-dots opacity-50"></div>
@@ -60,54 +247,57 @@ const Home = () => {
             <p className="section-subheading">Handpicked by our team - Best deals on popular routes</p>
           </div>
           
-          <div className="grid-equal-3">
-            {[
-              { id: 1, img: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80', title: 'Dhaka to Chittagong', type: 'Bus', price: 800, seats: 20, perks: ['AC', 'WiFi', 'Breakfast'] },
-              { id: 2, img: 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80', title: 'Dhaka to Sylhet', type: 'Train', price: 1200, seats: 35, perks: ['AC', 'Food', 'Sleeper'] },
-              { id: 3, img: 'https://images.unsplash.com/photo-1540946485063-a40da27545f8?w=800&q=80', title: 'Dhaka to Barisal', type: 'Launch', price: 1500, seats: 18, perks: ['Cabin', 'Food', 'Deck'] },
-              { id: 4, img: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80', title: 'Dhaka to Cox Bazar', type: 'Plane', price: 4500, seats: 12, perks: ['WiFi', 'Food', 'Entertainment'] },
-              { id: 5, img: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=800&q=80', title: 'Dhaka to Rajshahi', type: 'Bus', price: 900, seats: 25, perks: ['AC', 'Reclining Seats', 'TV'] },
-              { id: 6, img: 'https://images.unsplash.com/photo-1517093602198-530d8e1e859a?w=800&q=80', title: 'Chittagong to Dhaka', type: 'Train', price: 950, seats: 40, perks: ['AC', 'Food', 'Charging'] }
-            ].map((item) => (
-              <div key={item.id} className="card card-equal group">
-                <div className="relative h-48 overflow-hidden">
-                  <img src={item.img} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                  <span className="absolute top-4 right-4 badge badge-warning shadow-lg">Featured</span>
-                  <span className="absolute bottom-4 left-4 badge badge-primary shadow-lg">{item.type}</span>
-                </div>
-                <div className="card-body">
-                  <h3 className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-100 mb-3">{item.title}</h3>
-                  
-                  <div className="space-y-2 mb-4 text-sm flex-1">
-                    <div className="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                      <span className="flex items-center gap-2">💺 Seats Available</span>
-                      <span className="font-semibold text-blue-600 dark:text-blue-400">{item.seats}</span>
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+            </div>
+          ) : featuredTickets.length > 0 ? (
+            <div className="grid-equal-3">
+              {featuredTickets.map((item) => (
+                <div key={item.id} className="card card-equal group">
+                  <div className="relative h-48 overflow-hidden">
+                    <img src={item.img} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                    <span className="absolute top-4 right-4 badge badge-warning shadow-lg">Featured</span>
+                    <span className="absolute bottom-4 left-4 badge badge-primary shadow-lg">{item.type}</span>
+                  </div>
+                  <div className="card-body">
+                    <h3 className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-100 mb-3">{item.title}</h3>
+                    
+                    <div className="space-y-2 mb-4 text-sm flex-1">
+                      <div className="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                        <span className="flex items-center gap-2">💺 Seats Available</span>
+                        <span className="font-semibold text-blue-600 dark:text-blue-400">{item.seats}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                        <span className="flex items-center gap-2">🚌 Transport</span>
+                        <span className="font-semibold">{item.type}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-3">
+                        {item.perks.map((perk, perkIdx) => (
+                          <span key={perkIdx} className="badge badge-success text-xs">{perk}</span>
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                      <span className="flex items-center gap-2">🚌 Transport</span>
-                      <span className="font-semibold">{item.type}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1 mt-3">
-                      {item.perks.map((perk, perkIdx) => (
-                        <span key={perkIdx} className="badge badge-success text-xs">{perk}</span>
-                      ))}
+                    
+                    <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700 mt-auto">
+                      <div>
+                        <span className="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">৳{item.price}</span>
+                        <span className="text-gray-500 dark:text-gray-400 text-sm ml-1">/person</span>
+                      </div>
+                      <Link to={`/ticket/${item.id}`} className="btn btn-primary btn-sm">
+                        See Details
+                      </Link>
                     </div>
                   </div>
-                  
-                  <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700 mt-auto">
-                    <div>
-                      <span className="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">৳{item.price}</span>
-                      <span className="text-gray-500 dark:text-gray-400 text-sm ml-1">/person</span>
-                    </div>
-                    <Link to={`/ticket/${item.id}`} className="btn btn-primary btn-sm">
-                      See Details
-                    </Link>
-                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-500 dark:text-gray-400">No featured tickets available. <Link to="/all-tickets" className="text-blue-600 hover:underline">Browse all tickets</Link></p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -121,56 +311,59 @@ const Home = () => {
             <p className="section-subheading">Fresh routes and updated schedules</p>
           </div>
           
-          <div className="grid-equal-3">
-            {[
-              { id: 101, img: 'https://images.unsplash.com/photo-1564574531455-dc845256d0c2?w=800&q=80', title: 'Dhaka to Sylhet', type: 'Train', price: 1200, seats: 15, perks: ['AC', 'Food', 'Reclining'] },
-              { id: 102, img: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80', title: 'Dhaka to Chittagong', type: 'Bus', price: 800, seats: 22, perks: ['AC', 'WiFi', 'TV'] },
-              { id: 103, img: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80', title: "Dhaka to Cox's Bazar", type: 'Plane', price: 4500, seats: 8, perks: ['WiFi', 'Food', 'Entertainment'] },
-              { id: 104, img: 'https://images.unsplash.com/photo-1605281317010-fe5ffe798166?w=800&q=80', title: 'Barisal to Dhaka', type: 'Launch', price: 1500, seats: 12, perks: ['Cabin', 'Food', 'Deck'] },
-              { id: 105, img: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=800&q=80', title: 'Rajshahi to Dhaka', type: 'Bus', price: 750, seats: 25, perks: ['AC', 'Charging', 'Blanket'] },
-              { id: 106, img: 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80', title: 'Sylhet to Chittagong', type: 'Train', price: 950, seats: 18, perks: ['AC', 'Food', 'Sleeper'] }
-            ].map((item) => (
-              <div key={item.id} className="card card-equal group">
-                <div className="relative h-48 overflow-hidden">
-                  <img src={item.img} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                  <span className="absolute top-4 right-4 badge badge-success shadow-md">New</span>
-                  <span className="absolute bottom-4 left-4 badge badge-primary shadow-lg">{item.type}</span>
-                </div>
-                <div className="card-body">
-                  <h3 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors mb-3">
-                    {item.title}
-                  </h3>
-                  
-                  <div className="space-y-2 mb-4 text-sm bg-gray-50 dark:bg-gray-700/50 p-3 rounded-xl flex-1">
-                    <div className="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                      <span className="flex items-center gap-2">💺 Seats</span>
-                      <span className="font-semibold text-blue-600 dark:text-blue-400">{item.seats} available</span>
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+            </div>
+          ) : latestTickets.length > 0 ? (
+            <div className="grid-equal-3">
+              {latestTickets.map((item) => (
+                <div key={item.id} className="card card-equal group">
+                  <div className="relative h-48 overflow-hidden">
+                    <img src={item.img} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                    <span className="absolute top-4 right-4 badge badge-success shadow-md">New</span>
+                    <span className="absolute bottom-4 left-4 badge badge-primary shadow-lg">{item.type}</span>
+                  </div>
+                  <div className="card-body">
+                    <h3 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors mb-3">
+                      {item.title}
+                    </h3>
+                    
+                    <div className="space-y-2 mb-4 text-sm bg-gray-50 dark:bg-gray-700/50 p-3 rounded-xl flex-1">
+                      <div className="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                        <span className="flex items-center gap-2">💺 Seats</span>
+                        <span className="font-semibold text-blue-600 dark:text-blue-400">{item.seats} available</span>
+                      </div>
+                      <div className="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                        <span className="flex items-center gap-2">🚌 Transport</span>
+                        <span className="font-medium">{item.type}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-3">
+                        {item.perks.map((perk, perkIdx) => (
+                          <span key={perkIdx} className="badge badge-success text-xs">{perk}</span>
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                      <span className="flex items-center gap-2">🚌 Transport</span>
-                      <span className="font-medium">{item.type}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1 mt-3">
-                      {item.perks.map((perk, perkIdx) => (
-                        <span key={perkIdx} className="badge badge-success text-xs">{perk}</span>
-                      ))}
+                    
+                    <div className="flex justify-between items-center pt-4 border-t border-gray-100 dark:border-gray-700 mt-auto">
+                      <div>
+                        <span className="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">৳{item.price}</span>
+                        <span className="text-gray-500 dark:text-gray-400 text-sm ml-1">/person</span>
+                      </div>
+                      <Link to={`/ticket/${item.id}`} className="btn btn-primary btn-sm">
+                        See Details
+                      </Link>
                     </div>
                   </div>
-                  
-                  <div className="flex justify-between items-center pt-4 border-t border-gray-100 dark:border-gray-700 mt-auto">
-                    <div>
-                      <span className="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">৳{item.price}</span>
-                      <span className="text-gray-500 dark:text-gray-400 text-sm ml-1">/person</span>
-                    </div>
-                    <Link to={`/ticket/${item.id}`} className="btn btn-primary btn-sm">
-                      See Details
-                    </Link>
-                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-500 dark:text-gray-400">No tickets available yet. <Link to="/all-tickets" className="text-blue-600 hover:underline">Browse all tickets</Link></p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -200,52 +393,26 @@ const Home = () => {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {[
-              { 
-                id: 201, 
-                from: 'Dhaka', 
-                to: "Cox's Bazar", 
-                type: 'Plane', 
-                price: 4200, 
-                discount: '20% OFF',
-                reason: 'Beach Season',
-                icon: '✈️',
-                color: 'from-purple-500 to-indigo-600'
-              },
-              { 
-                id: 202, 
-                from: 'Dhaka', 
-                to: 'Sylhet', 
-                type: 'Train', 
-                price: 950, 
-                discount: '15% OFF',
-                reason: 'Tea Garden Tour',
-                icon: '🚂',
-                color: 'from-green-500 to-emerald-600'
-              },
-              { 
-                id: 203, 
-                from: 'Dhaka', 
-                to: 'Sundarbans', 
-                type: 'Launch', 
-                price: 2500, 
-                discount: 'Popular',
-                reason: 'Wildlife Adventure',
-                icon: '⛴️',
-                color: 'from-cyan-500 to-blue-600'
-              },
-              { 
-                id: 204, 
-                from: 'Dhaka', 
-                to: 'Rangamati', 
-                type: 'Bus', 
-                price: 1100, 
-                discount: 'Trending',
-                reason: 'Hill Track Explorer',
-                icon: '🚌',
-                color: 'from-orange-500 to-red-600'
-              }
-            ].map((item) => (
+            {(featuredTickets.length > 0 ? featuredTickets.slice(0, 4).map((ticket, index) => {
+              const discounts = ['20% OFF', '15% OFF', 'Popular', 'Trending'];
+              const reasons = ['Best Value', 'Top Rated', 'Most Booked', 'New Route'];
+              const icons = { Bus: '🚌', Train: '🚂', Launch: '⛴️', Plane: '✈️' };
+              return {
+                id: ticket.id,
+                from: ticket.title.split(' to ')[0] || 'Dhaka',
+                to: ticket.title.split(' to ')[1] || ticket.title,
+                type: ticket.type,
+                price: ticket.price,
+                discount: discounts[index % 4],
+                reason: reasons[index % 4],
+                icon: icons[ticket.type] || '🚌'
+              };
+            }) : [
+              { id: 'demo1', from: 'Dhaka', to: "Cox's Bazar", type: 'Plane', price: 4200, discount: '20% OFF', reason: 'Beach Season', icon: '✈️' },
+              { id: 'demo2', from: 'Dhaka', to: 'Sylhet', type: 'Train', price: 950, discount: '15% OFF', reason: 'Tea Garden Tour', icon: '🚂' },
+              { id: 'demo3', from: 'Dhaka', to: 'Sundarbans', type: 'Launch', price: 2500, discount: 'Popular', reason: 'Wildlife Adventure', icon: '⛴️' },
+              { id: 'demo4', from: 'Dhaka', to: 'Rangamati', type: 'Bus', price: 1100, discount: 'Trending', reason: 'Hill Track Explorer', icon: '🚌' }
+            ]).map((item) => (
               <div key={item.id} className="group relative">
                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 md:p-6 border border-white/20 hover:border-white/40 transition-all duration-300 hover:transform hover:-translate-y-2 hover:shadow-2xl h-full flex flex-col">
                   {/* Discount Badge */}
@@ -279,7 +446,7 @@ const Home = () => {
                         <span className="text-gray-400 text-sm ml-1">/person</span>
                       </div>
                       <Link 
-                        to={`/ticket/${item.id}`} 
+                        to={item.id.toString().startsWith('demo') ? '/all-tickets' : `/ticket/${item.id}`} 
                         className="px-3 md:px-4 py-2 bg-white text-gray-900 rounded-xl font-semibold text-sm hover:bg-gray-100 transition-colors"
                       >
                         Book Now

@@ -1,6 +1,8 @@
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../providers/AuthProvider';
 import { FaHistory, FaSearch, FaTicketAlt, FaCalendarAlt, FaReceipt } from 'react-icons/fa';
+import api from '../../utils/api';
+import toast from 'react-hot-toast';
 
 const Transactions = () => {
   const { user } = useContext(AuthContext);
@@ -8,70 +10,45 @@ const Transactions = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Sample transaction data (would come from Stripe API)
+  // Fetch transactions from API
   useEffect(() => {
-    const sampleTransactions = [
-      {
-        id: 'txn_1234567890ABCDEF',
-        amount: 1600,
-        ticketTitle: 'Premium AC Coach - Dhaka to Chittagong',
-        paymentDate: '2025-12-18T14:30:00Z',
-        status: 'succeeded',
-        paymentMethod: 'card',
-        last4: '4242'
-      },
-      {
-        id: 'txn_2345678901BCDEFG',
-        amount: 10500,
-        ticketTitle: 'Domestic Flight Economy - Dhaka to Cox\'s Bazar',
-        paymentDate: '2025-12-15T09:15:00Z',
-        status: 'succeeded',
-        paymentMethod: 'card',
-        last4: '1234'
-      },
-      {
-        id: 'txn_3456789012CDEFGH',
-        amount: 2200,
-        ticketTitle: 'Intercity Express Train - Dhaka to Rajshahi',
-        paymentDate: '2025-12-10T16:45:00Z',
-        status: 'succeeded',
-        paymentMethod: 'card',
-        last4: '5678'
-      },
-      {
-        id: 'txn_4567890123DEFGHI',
-        amount: 600,
-        ticketTitle: 'Express Train Service - Dhaka to Sylhet',
-        paymentDate: '2025-12-08T11:20:00Z',
-        status: 'succeeded',
-        paymentMethod: 'card',
-        last4: '9012'
-      },
-      {
-        id: 'txn_5678901234EFGHIJ',
-        amount: 850,
-        ticketTitle: 'Night Coach Return - Chittagong to Dhaka',
-        paymentDate: '2025-12-05T08:00:00Z',
-        status: 'succeeded',
-        paymentMethod: 'card',
-        last4: '3456'
-      },
-      {
-        id: 'txn_6789012345FGHIJK',
-        amount: 1000,
-        ticketTitle: 'Deluxe Cabin Launch - Dhaka to Barisal',
-        paymentDate: '2025-12-01T19:30:00Z',
-        status: 'succeeded',
-        paymentMethod: 'card',
-        last4: '7890'
+    const fetchTransactions = async () => {
+      if (!user?.email) {
+        setLoading(false);
+        return;
       }
-    ];
 
-    setTimeout(() => {
-      setTransactions(sampleTransactions);
-      setLoading(false);
-    }, 500);
-  }, []);
+      try {
+        const response = await api.get(`/payments/history/${user.email}`);
+        setTransactions(response.data);
+      } catch (error) {
+        console.error('Error fetching transactions:', error);
+        // If Stripe API fails, try to get paid bookings instead
+        try {
+          const bookingsResponse = await api.get(`/bookings/user/${user.uid}`);
+          const paidBookings = bookingsResponse.data
+            .filter(b => b.status === 'paid')
+            .map(b => ({
+              id: b.paymentId || b._id,
+              amount: b.totalPrice,
+              ticketTitle: `${b.ticketTitle} - ${b.from} to ${b.to}`,
+              paymentDate: b.paidAt || b.updatedAt,
+              status: 'succeeded',
+              paymentMethod: 'card',
+              last4: '****'
+            }));
+          setTransactions(paidBookings);
+        } catch (bookingError) {
+          console.error('Error fetching paid bookings:', bookingError);
+          toast.error('Failed to load transactions');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, [user]);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {

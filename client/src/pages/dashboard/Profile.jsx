@@ -35,7 +35,7 @@ const Profile = () => {
   const getRoleBadge = () => {
     const badges = {
       admin: { bg: 'bg-gradient-to-r from-red-500 to-red-600', text: 'text-white', label: 'Administrator', icon: <FaShieldAlt /> },
-      vendor: { bg: 'bg-gradient-to-r from-purple-500 to-purple-600', text: 'text-white', label: 'Vendor', icon: <FaUserTag /> },
+      vendor: { bg: 'bg-gradient-to-r from-purple-500 to-blue-950', text: 'text-white', label: 'Vendor', icon: <FaUserTag /> },
       user: { bg: 'bg-gradient-to-r from-green-500 to-green-600', text: 'text-white', label: 'User', icon: <FaUser /> }
     };
     return badges[userRole] || badges.user;
@@ -64,7 +64,7 @@ const Profile = () => {
   const colorClasses = {
     blue: 'from-blue-500 to-blue-600 shadow-blue-500/30',
     green: 'from-green-500 to-green-600 shadow-green-500/30',
-    purple: 'from-purple-500 to-purple-600 shadow-purple-500/30',
+    purple: 'from-purple-500 to-blue-950 shadow-purple-500/30',
     yellow: 'from-yellow-500 to-orange-500 shadow-yellow-500/30',
     cyan: 'from-cyan-500 to-cyan-600 shadow-cyan-500/30',
   };
@@ -74,7 +74,7 @@ const Profile = () => {
       {/* Profile Header Card */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
         {/* Cover Image with Gradient */}
-        <div className="h-32 sm:h-40 lg:h-48 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 relative overflow-hidden">
+        <div className="h-32 sm:h-40 lg:h-48 bg-gradient-to-r from-blue-600 via-black to-blue-600 relative overflow-hidden">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.1%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-30"></div>
           <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/30 to-transparent"></div>
           
@@ -105,7 +105,7 @@ const Profile = () => {
               
               <div className="mt-2 sm:mt-0 sm:mb-2">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-white dark:text-white">
                     {user?.displayName}
                   </h1>
                   <span className={`inline-flex items-center gap-1.5 px-3 py-1 ${roleBadge.bg} ${roleBadge.text} rounded-lg text-xs font-bold shadow-lg`}>

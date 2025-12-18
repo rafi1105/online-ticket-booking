@@ -54,6 +54,40 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Create or update user (upsert by email)
+router.post('/upsert', async (req, res) => {
+  try {
+    const { email, ...updateData } = req.body;
+    
+    const user = await User.findOneAndUpdate(
+      { email },
+      { ...updateData, email },
+      { new: true, upsert: true, runValidators: true }
+    );
+    
+    res.json(user);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Update user by email
+router.put('/email/:email', async (req, res) => {
+  try {
+    const user = await User.findOneAndUpdate(
+      { email: req.params.email },
+      req.body,
+      { new: true, runValidators: true }
+    );
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // Update user
 router.put('/:id', async (req, res) => {
   try {

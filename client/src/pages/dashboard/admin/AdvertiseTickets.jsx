@@ -4,6 +4,7 @@ import {
   FaToggleOn, FaToggleOff, FaInfoCircle
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import api from '../../../utils/api';
 
 const AdvertiseTickets = () => {
   const [tickets, setTickets] = useState([]);
@@ -12,135 +13,36 @@ const AdvertiseTickets = () => {
 
   const MAX_ADVERTISED = 6;
 
-  // Sample approved tickets
+  // Fetch approved tickets from API
   useEffect(() => {
-    const sampleTickets = [
-      {
-        id: 1,
-        title: 'Premium AC Coach',
-        image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80',
-        from: 'Dhaka',
-        to: 'Chittagong',
-        transportType: 'Bus',
-        price: 800,
-        departureDate: '2025-12-25',
-        vendorName: 'Ahmed Transport',
-        isAdvertised: true
-      },
-      {
-        id: 2,
-        title: 'Express Train Service',
-        image: 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
-        from: 'Dhaka',
-        to: 'Sylhet',
-        transportType: 'Train',
-        price: 600,
-        departureDate: '2025-12-28',
-        vendorName: 'Railway Services',
-        isAdvertised: true
-      },
-      {
-        id: 3,
-        title: 'Deluxe Cabin Launch',
-        image: 'https://images.unsplash.com/photo-1540946485063-a40da27545f8?w=800&q=80',
-        from: 'Dhaka',
-        to: 'Barisal',
-        transportType: 'Launch',
-        price: 500,
-        departureDate: '2025-12-30',
-        vendorName: 'Water Transport',
-        isAdvertised: false
-      },
-      {
-        id: 4,
-        title: 'Morning Flight Special',
-        image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80',
-        from: 'Dhaka',
-        to: "Cox's Bazar",
-        transportType: 'Plane',
-        price: 3500,
-        departureDate: '2026-01-05',
-        vendorName: 'BD Airlines',
-        isAdvertised: true
-      },
-      {
-        id: 5,
-        title: 'Night Express Bus',
-        image: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=800&q=80',
-        from: 'Dhaka',
-        to: 'Rangpur',
-        transportType: 'Bus',
-        price: 750,
-        departureDate: '2026-01-10',
-        vendorName: 'Green Line',
-        isAdvertised: false
-      },
-      {
-        id: 6,
-        title: 'Economy Bus Service',
-        image: 'https://images.unsplash.com/photo-1557223562-6c77ef16210f?w=800&q=80',
-        from: 'Chittagong',
-        to: 'Dhaka',
-        transportType: 'Bus',
-        price: 550,
-        departureDate: '2026-01-12',
-        vendorName: 'Shyamoli Paribahan',
-        isAdvertised: false
-      },
-      {
-        id: 7,
-        title: 'Intercity Express Train',
-        image: 'https://images.unsplash.com/photo-1532105956626-9569c03602f6?w=800&q=80',
-        from: 'Dhaka',
-        to: 'Rajshahi',
-        transportType: 'Train',
-        price: 450,
-        departureDate: '2026-01-15',
-        vendorName: 'Railway Services',
-        isAdvertised: true
-      },
-      {
-        id: 8,
-        title: 'Luxury Sleeper Coach',
-        image: 'https://images.unsplash.com/photo-1494515843206-f3117d3f51b7?w=800&q=80',
-        from: 'Dhaka',
-        to: 'Khulna',
-        transportType: 'Bus',
-        price: 900,
-        departureDate: '2026-01-18',
-        vendorName: 'Hanif Enterprise',
-        isAdvertised: false
-      },
-      {
-        id: 9,
-        title: 'VIP Launch Cabin',
-        image: 'https://images.unsplash.com/photo-1559599746-8823b38544c6?w=800&q=80',
-        from: 'Dhaka',
-        to: 'Patuakhali',
-        transportType: 'Launch',
-        price: 700,
-        departureDate: '2026-01-20',
-        vendorName: 'Water Transport',
-        isAdvertised: true
-      },
-      {
-        id: 10,
-        title: 'Weekend Getaway Flight',
-        image: 'https://images.unsplash.com/photo-1464037866556-6812c9d1c72e?w=800&q=80',
-        from: 'Dhaka',
-        to: 'Sylhet',
-        transportType: 'Plane',
-        price: 2800,
-        departureDate: '2026-01-22',
-        vendorName: 'BD Airlines',
-        isAdvertised: true
+    const fetchTickets = async () => {
+      try {
+        const response = await api.get('/tickets?status=all');
+        // Filter only approved/active tickets
+        const approvedTickets = response.data
+          .filter(t => t.status === 'approved' || t.status === 'active')
+          .map(ticket => ({
+            id: ticket._id,
+            title: ticket.title || `${ticket.from} to ${ticket.to}`,
+            image: ticket.image || 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80',
+            from: ticket.from,
+            to: ticket.to,
+            transportType: ticket.type,
+            price: ticket.price,
+            departureDate: ticket.departureDate,
+            vendorName: ticket.vendorName || 'Vendor',
+            isAdvertised: ticket.isAdvertised || false
+          }));
+        setTickets(approvedTickets);
+      } catch (error) {
+        console.error('Error fetching tickets:', error);
+        toast.error('Failed to load tickets');
+      } finally {
+        setLoading(false);
       }
-    ];
+    };
 
-    setTimeout(() => {
-      setTickets(sampleTickets);
-      setLoading(false);
-    }, 500);
+    fetchTickets();
   }, []);
 
   const getTypeIcon = (type) => {
@@ -155,7 +57,7 @@ const AdvertiseTickets = () => {
 
   const advertisedCount = tickets.filter(t => t.isAdvertised).length;
 
-  const handleToggleAdvertise = (ticketId) => {
+  const handleToggleAdvertise = async (ticketId) => {
     const ticket = tickets.find(t => t.id === ticketId);
     
     // Check if trying to advertise more than limit
@@ -164,14 +66,21 @@ const AdvertiseTickets = () => {
       return;
     }
 
-    setTickets(prev => prev.map(t => 
-      t.id === ticketId ? { ...t, isAdvertised: !t.isAdvertised } : t
-    ));
+    try {
+      await api.put(`/tickets/${ticketId}`, { isAdvertised: !ticket.isAdvertised });
+      
+      setTickets(prev => prev.map(t => 
+        t.id === ticketId ? { ...t, isAdvertised: !t.isAdvertised } : t
+      ));
 
-    if (!ticket.isAdvertised) {
-      toast.success('Ticket added to homepage advertisements!');
-    } else {
-      toast.success('Ticket removed from advertisements.');
+      if (!ticket.isAdvertised) {
+        toast.success('Ticket added to homepage carousel!');
+      } else {
+        toast.success('Ticket removed from carousel.');
+      }
+    } catch (error) {
+      console.error('Error updating ticket:', error);
+      toast.error('Failed to update advertisement status');
     }
   };
 

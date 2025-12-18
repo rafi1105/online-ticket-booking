@@ -5,6 +5,7 @@ import {
   FaHourglass, FaInbox, FaSearch
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import api from '../../utils/api';
 
 const RequestedBookings = () => {
   const { user } = useContext(AuthContext);
@@ -13,95 +14,41 @@ const RequestedBookings = () => {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Sample booking requests data (would come from API)
+  // Fetch booking requests from API
   useEffect(() => {
-    const sampleBookings = [
-      {
-        id: 1,
-        ticketId: 'TKT001',
-        ticketTitle: 'Premium AC Coach - Dhaka to Chittagong',
-        quantity: 2,
-        unitPrice: 800,
-        totalPrice: 1600,
-        status: 'pending',
-        userName: 'John Doe',
-        userEmail: 'john@example.com',
-        userPhoto: 'https://ui-avatars.com/api/?name=John+Doe&background=3B82F6&color=fff',
-        bookedAt: '2025-12-18T10:30:00Z'
-      },
-      {
-        id: 2,
-        ticketId: 'TKT001',
-        ticketTitle: 'Premium AC Coach - Dhaka to Chittagong',
-        quantity: 1,
-        unitPrice: 800,
-        totalPrice: 800,
-        status: 'pending',
-        userName: 'Jane Smith',
-        userEmail: 'jane@example.com',
-        userPhoto: 'https://ui-avatars.com/api/?name=Jane+Smith&background=10B981&color=fff',
-        bookedAt: '2025-12-18T11:45:00Z'
-      },
-      {
-        id: 3,
-        ticketId: 'TKT002',
-        ticketTitle: 'Express Train Service - Dhaka to Sylhet',
-        quantity: 4,
-        unitPrice: 600,
-        totalPrice: 2400,
-        status: 'accepted',
-        userName: 'Mike Johnson',
-        userEmail: 'mike@example.com',
-        userPhoto: 'https://ui-avatars.com/api/?name=Mike+Johnson&background=8B5CF6&color=fff',
-        bookedAt: '2025-12-17T09:00:00Z'
-      },
-      {
-        id: 4,
-        ticketId: 'TKT002',
-        ticketTitle: 'Express Train Service - Dhaka to Sylhet',
-        quantity: 2,
-        unitPrice: 600,
-        totalPrice: 1200,
-        status: 'rejected',
-        rejectionReason: 'Duplicate booking request',
-        userName: 'Sarah Wilson',
-        userEmail: 'sarah@example.com',
-        userPhoto: 'https://ui-avatars.com/api/?name=Sarah+Wilson&background=F59E0B&color=fff',
-        bookedAt: '2025-12-16T14:20:00Z'
-      },
-      {
-        id: 5,
-        ticketId: 'TKT001',
-        ticketTitle: 'Premium AC Coach - Dhaka to Chittagong',
-        quantity: 3,
-        unitPrice: 800,
-        totalPrice: 2400,
-        status: 'paid',
-        userName: 'Tom Brown',
-        userEmail: 'tom@example.com',
-        userPhoto: 'https://ui-avatars.com/api/?name=Tom+Brown&background=EF4444&color=fff',
-        bookedAt: '2025-12-15T08:30:00Z'
-      },
-      {
-        id: 6,
-        ticketId: 'TKT003',
-        ticketTitle: 'Deluxe Cabin Launch - Dhaka to Barisal',
-        quantity: 2,
-        unitPrice: 500,
-        totalPrice: 1000,
-        status: 'pending',
-        userName: 'Emily Davis',
-        userEmail: 'emily@example.com',
-        userPhoto: 'https://ui-avatars.com/api/?name=Emily+Davis&background=EC4899&color=fff',
-        bookedAt: '2025-12-18T14:00:00Z'
+    const fetchBookings = async () => {
+      if (!user?.uid) {
+        setLoading(false);
+        return;
       }
-    ];
 
-    setTimeout(() => {
-      setBookings(sampleBookings);
-      setLoading(false);
-    }, 500);
-  }, []);
+      try {
+        const response = await api.get(`/bookings/vendor/${user.uid}`);
+        const bookingsData = response.data.map(booking => ({
+          id: booking._id,
+          ticketId: booking.ticketId?._id || booking.ticketId,
+          ticketTitle: booking.ticketTitle || `${booking.from} to ${booking.to}`,
+          quantity: booking.numberOfSeats,
+          unitPrice: booking.pricePerSeat,
+          totalPrice: booking.totalPrice,
+          status: booking.status,
+          userName: booking.userName || 'Customer',
+          userEmail: booking.userEmail,
+          userPhoto: `https://ui-avatars.com/api/?name=${encodeURIComponent(booking.userName || 'User')}&background=3B82F6&color=fff`,
+          bookedAt: booking.bookedAt || booking.createdAt,
+          rejectionReason: booking.rejectionReason
+        }));
+        setBookings(bookingsData);
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+        toast.error('Failed to load booking requests');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBookings();
+  }, [user]);
 
   const getStatusConfig = (status) => {
     const configs = {
@@ -133,18 +80,33 @@ const RequestedBookings = () => {
     return configs[status] || configs.pending;
   };
 
-  const handleAccept = (bookingId) => {
-    setBookings(prev => prev.map(b => 
-      b.id === bookingId ? { ...b, status: 'accepted' } : b
-    ));
-    toast.success('Booking accepted! User can now proceed with payment.');
+  const handleAccept = async (bookingId) => {
+    try {
+      await api.put(`/bookings/${bookingId}`, { status: 'accepted' });
+      setBookings(prev => prev.map(b => 
+        b.id === bookingId ? { ...b, status: 'accepted' } : b
+      ));
+      toast.success('Booking accepted! User can now proceed with payment.');
+    } catch (error) {
+      console.error('Error accepting booking:', error);
+      toast.error('Failed to accept booking');
+    }
   };
 
-  const handleReject = (bookingId) => {
-    setBookings(prev => prev.map(b => 
-      b.id === bookingId ? { ...b, status: 'rejected', rejectionReason: 'Booking rejected by vendor' } : b
-    ));
-    toast.success('Booking rejected.');
+  const handleReject = async (bookingId) => {
+    try {
+      await api.put(`/bookings/${bookingId}`, { 
+        status: 'rejected', 
+        rejectionReason: 'Booking rejected by vendor' 
+      });
+      setBookings(prev => prev.map(b => 
+        b.id === bookingId ? { ...b, status: 'rejected', rejectionReason: 'Booking rejected by vendor' } : b
+      ));
+      toast.success('Booking rejected.');
+    } catch (error) {
+      console.error('Error rejecting booking:', error);
+      toast.error('Failed to reject booking');
+    }
   };
 
   // Filter and search

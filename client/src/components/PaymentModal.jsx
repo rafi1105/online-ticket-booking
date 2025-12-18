@@ -3,6 +3,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { FaCreditCard, FaLock, FaTimes, FaCheckCircle } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import api from '../utils/api';
 
 // Initialize Stripe with publishable key
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_your_key_here');
@@ -45,20 +46,14 @@ const CheckoutForm = ({ booking, onSuccess, onCancel }) => {
 
     try {
       // Create payment intent on server
-      const response = await fetch('http://localhost:5000/api/payments/create-payment-intent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          amount: booking.totalPrice,
-          bookingId: booking.id,
-          ticketTitle: booking.title,
-          userEmail: booking.userEmail
-        }),
+      const response = await api.post('/payments/create-payment-intent', {
+        amount: booking.totalPrice,
+        bookingId: booking.id,
+        ticketTitle: booking.title,
+        userEmail: booking.userEmail
       });
 
-      const { clientSecret, error: serverError } = await response.json();
+      const { clientSecret, error: serverError } = response.data;
 
       if (serverError) {
         throw new Error(serverError);
@@ -82,15 +77,9 @@ const CheckoutForm = ({ booking, onSuccess, onCancel }) => {
         toast.success('Payment successful!');
         
         // Confirm payment on server
-        await fetch('http://localhost:5000/api/payments/confirm-payment', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            paymentIntentId: paymentIntent.id,
-            bookingId: booking.id
-          }),
+        await api.post('/payments/confirm-payment', {
+          paymentIntentId: paymentIntent.id,
+          bookingId: booking.id
         });
 
         setTimeout(() => {

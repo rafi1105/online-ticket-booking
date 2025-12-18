@@ -6,6 +6,7 @@ import {
   FaCalendarAlt, FaClock, FaImage, FaPlus, FaUser, FaEnvelope
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import api from '../../utils/api';
 
 const VendorAddTicket = () => {
   const { user } = useContext(AuthContext);
@@ -76,40 +77,59 @@ const VendorAddTicket = () => {
       };
       reader.readAsDataURL(file);
 
-      // Upload to ImgBB
-      setLoading(true);
-      try {
-        const formData = new FormData();
-        formData.append('image', file);
-        
-        const response = await fetch(`https://api.imgbb.com/1/upload?key=YOUR_IMGBB_API_KEY`, {
-          method: 'POST',
-          body: formData
-        });
-        
-        const data = await response.json();
-        if (data.success) {
+      // Try to upload to ImgBB if API key is configured
+      const imgbbApiKey = import.meta.env.VITE_IMGBB_API_KEY || 'be97dbcf94363ca91a203512af4913d5';
+      
+      if (imgbbApiKey) {
+        setLoading(true);
+        try {
+          const uploadFormData = new FormData();
+          uploadFormData.append('image', file);
+          
+          const response = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
+            method: 'POST',
+            body: uploadFormData
+          });
+          
+          const data = await response.json();
+          if (data.success) {
+            setFormData(prev => ({
+              ...prev,
+              image: data.data.url
+            }));
+            toast.success('Image uploaded successfully!');
+          } else {
+            // Use a default placeholder image
+            setFormData(prev => ({
+              ...prev,
+              image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80'
+            }));
+            toast.info('Using default image');
+          }
+        } catch (error) {
+          console.error('Image upload error:', error);
+          // Use default placeholder
           setFormData(prev => ({
             ...prev,
-            image: data.data.url
+            image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80'
           }));
-          toast.success('Image uploaded successfully!');
-        } else {
-          // Use preview URL for demo
-          setFormData(prev => ({
-            ...prev,
-            image: reader.result
-          }));
+          toast.info('Using default image');
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('Image upload error:', error);
-        // Use preview for demo
+      } else {
+        // No API key - use default placeholder based on transport type
+        const defaultImages = {
+          Bus: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80',
+          Train: 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
+          Launch: 'https://images.unsplash.com/photo-1540946485063-a40da27545f8?w=800&q=80',
+          Plane: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80'
+        };
         setFormData(prev => ({
           ...prev,
-          image: reader.result
+          image: defaultImages[prev.transportType] || defaultImages.Bus
         }));
-      } finally {
-        setLoading(false);
+        toast.info('Image preview set. Default image will be used.');
       }
     }
   };
@@ -127,41 +147,34 @@ const VendorAddTicket = () => {
     }
 
     // Get selected perks
-    const selectedPerks = Object.entries(formData.perks)
+    const selectedFeatures = Object.entries(formData.perks)
       .filter(([_, isSelected]) => isSelected)
       .map(([key, _]) => perksList.find(p => p.key === key)?.label);
 
-    // Create ticket object
+    // Create ticket object - match server model fields
     const ticketData = {
       title: formData.title,
       from: formData.from,
       to: formData.to,
-      transportType: formData.transportType,
+      type: formData.transportType, // model expects 'type' not 'transportType'
       price: parseInt(formData.price),
-      quantity: parseInt(formData.quantity),
+      totalSeats: parseInt(formData.quantity),
       availableSeats: parseInt(formData.quantity),
       departureDate: formData.departureDate,
       departureTime: formData.departureTime,
-      perks: selectedPerks,
+      features: selectedFeatures, // model expects 'features' not 'perks'
       image: formData.image || 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80',
       vendorName: user?.displayName,
       vendorEmail: user?.email,
       vendorId: user?.uid,
-      status: 'pending', // Initially pending - needs admin approval
-      createdAt: new Date().toISOString()
+      status: 'pending' // Initially pending - needs admin approval
     };
 
     try {
       // API call to save ticket
-      const response = await fetch('http://localhost:5000/tickets', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(ticketData)
-      });
+      const response = await api.post('/tickets', ticketData);
 
-      if (!response.ok) {
+      if (response.status !== 200 && response.status !== 201) {
         throw new Error('Failed to add ticket');
       }
 
@@ -169,9 +182,7 @@ const VendorAddTicket = () => {
       navigate('/dashboard/my-tickets');
     } catch (error) {
       console.error('Error adding ticket:', error);
-      // For demo, show success anyway
-      toast.success('Ticket added! Status: Pending admin approval');
-      navigate('/dashboard/my-tickets');
+      toast.error('Failed to add ticket. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -304,28 +315,35 @@ const VendorAddTicket = () => {
                 <FaCalendarAlt className="inline mr-2 text-blue-600" />
                 Departure Date *
               </label>
-              <input
-                type="date"
-                name="departureDate"
-                value={formData.departureDate}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
+              <div className="relative">
+                <input
+                  type="date"
+                  name="departureDate"
+                  value={formData.departureDate}
+                  onChange={handleInputChange}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:dark:invert [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
+                  required
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Click to open calendar</p>
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 <FaClock className="inline mr-2 text-purple-600" />
                 Departure Time *
               </label>
-              <input
-                type="time"
-                name="departureTime"
-                value={formData.departureTime}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
+              <div className="relative">
+                <input
+                  type="time"
+                  name="departureTime"
+                  value={formData.departureTime}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:dark:invert [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
+                  required
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Click to select time</p>
             </div>
           </div>
 

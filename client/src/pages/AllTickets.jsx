@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { FaBus, FaTrain, FaShip, FaPlane, FaMapMarkerAlt, FaClock, FaUsers, FaSearch, FaFilter, FaSort, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import api from '../utils/api';
+import toast from 'react-hot-toast';
 
 const AllTickets = () => {
   const [searchFrom, setSearchFrom] = useState('');
@@ -8,7 +10,40 @@ const AllTickets = () => {
   const [filterType, setFilterType] = useState('All');
   const [sortBy, setSortBy] = useState('default');
   const [currentPage, setCurrentPage] = useState(1);
+  const [allTickets, setAllTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
   const itemsPerPage = 6;
+
+  // Fetch tickets from API
+  useEffect(() => {
+    const fetchTickets = async () => {
+      try {
+        const response = await api.get('/tickets');
+        const tickets = response.data.map(ticket => ({
+          id: ticket._id,
+          title: ticket.title,
+          type: ticket.type,
+          from: ticket.from,
+          to: ticket.to,
+          date: ticket.departureDate,
+          time: ticket.departureTime,
+          seats: ticket.availableSeats,
+          price: ticket.price,
+          features: ticket.features || ['AC'],
+          image: ticket.image || 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80',
+          status: ticket.status
+        }));
+        setAllTickets(tickets);
+      } catch (error) {
+        console.error('Error fetching tickets:', error);
+        toast.error('Failed to load tickets');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTickets();
+  }, []);
 
   const getTypeIcon = (type) => {
     const icons = {
@@ -29,178 +64,6 @@ const AllTickets = () => {
     };
     return colors[type] || 'bg-blue-100 text-blue-700';
   };
-
-  // Sample ticket data with real images from Unsplash (Admin Approved)
-  const allTickets = [
-    { 
-      id: 1, 
-      title: 'Premium AC Coach Service',
-      type: 'Bus', 
-      from: 'Dhaka', 
-      to: 'Chittagong', 
-      date: 'Dec 20, 2025', 
-      time: '10:00 AM', 
-      seats: 25, 
-      price: 800, 
-      features: ['AC', 'WiFi', 'TV'],
-      image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80',
-      status: 'approved'
-    },
-    { 
-      id: 2, 
-      title: 'Express Train Service',
-      type: 'Train', 
-      from: 'Dhaka', 
-      to: 'Sylhet', 
-      date: 'Dec 21, 2025', 
-      time: '08:00 AM', 
-      seats: 40, 
-      price: 600, 
-      features: ['AC', 'Food'],
-      image: 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
-      status: 'approved'
-    },
-    { 
-      id: 3, 
-      title: 'Deluxe Cabin Launch',
-      type: 'Launch', 
-      from: 'Dhaka', 
-      to: 'Barisal', 
-      date: 'Dec 22, 2025', 
-      time: '11:00 PM', 
-      seats: 30, 
-      price: 500, 
-      features: ['Cabin', 'Food'],
-      image: 'https://images.unsplash.com/photo-1540946485063-a40da27545f8?w=800&q=80',
-      status: 'approved'
-    },
-    { 
-      id: 4, 
-      title: 'Domestic Flight Economy',
-      type: 'Plane', 
-      from: 'Dhaka', 
-      to: "Cox's Bazar", 
-      date: 'Dec 23, 2025', 
-      time: '02:00 PM', 
-      seats: 15, 
-      price: 3500, 
-      features: ['WiFi', 'Food', 'Entertainment'],
-      image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80',
-      status: 'approved'
-    },
-    { 
-      id: 5, 
-      title: 'Luxury Sleeper Bus',
-      type: 'Bus', 
-      from: 'Dhaka', 
-      to: 'Sylhet', 
-      date: 'Dec 24, 2025', 
-      time: '09:00 AM', 
-      seats: 20, 
-      price: 900, 
-      features: ['AC', 'WiFi', 'Reclining Seats'],
-      image: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=800&q=80',
-      status: 'approved'
-    },
-    { 
-      id: 6, 
-      title: 'Intercity Express Train',
-      type: 'Train', 
-      from: 'Dhaka', 
-      to: 'Rajshahi', 
-      date: 'Dec 25, 2025', 
-      time: '07:00 AM', 
-      seats: 35, 
-      price: 550, 
-      features: ['AC', 'Food', 'Sleeper'],
-      image: 'https://images.unsplash.com/photo-1517093602198-530d8e1e859a?w=800&q=80',
-      status: 'approved'
-    },
-    { 
-      id: 7, 
-      title: 'Night Coach Return',
-      type: 'Bus', 
-      from: 'Chittagong', 
-      to: 'Dhaka', 
-      date: 'Dec 26, 2025', 
-      time: '06:00 PM', 
-      seats: 22, 
-      price: 850, 
-      features: ['AC', 'WiFi'],
-      image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80',
-      status: 'approved'
-    },
-    { 
-      id: 8, 
-      title: 'River Cruise Overnight',
-      type: 'Launch', 
-      from: 'Dhaka', 
-      to: 'Khulna', 
-      date: 'Dec 27, 2025', 
-      time: '10:00 PM', 
-      seats: 28, 
-      price: 450, 
-      features: ['Cabin', 'Food', 'Deck'],
-      image: 'https://images.unsplash.com/photo-1605281317010-fe5ffe798166?w=800&q=80',
-      status: 'approved'
-    },
-    { 
-      id: 9, 
-      title: 'Quick Hop Flight',
-      type: 'Plane', 
-      from: 'Dhaka', 
-      to: 'Sylhet', 
-      date: 'Dec 28, 2025', 
-      time: '03:00 PM', 
-      seats: 12, 
-      price: 2800, 
-      features: ['WiFi', 'Food'],
-      image: 'https://images.unsplash.com/photo-1583925954895-c5dddb1b39ba?w=800&q=80',
-      status: 'approved'
-    },
-    { 
-      id: 10, 
-      title: 'Premium Rail Service',
-      type: 'Train', 
-      from: 'Dhaka', 
-      to: 'Chittagong', 
-      date: 'Dec 29, 2025', 
-      time: '06:00 AM', 
-      seats: 38, 
-      price: 580, 
-      features: ['AC', 'Food', 'Reclining'],
-      image: 'https://images.unsplash.com/photo-1564574531455-dc845256d0c2?w=800&q=80',
-      status: 'approved'
-    },
-    { 
-      id: 11, 
-      title: 'Northern Express Coach',
-      type: 'Bus', 
-      from: 'Dhaka', 
-      to: 'Rangpur', 
-      date: 'Dec 30, 2025', 
-      time: '08:30 AM', 
-      seats: 24, 
-      price: 750, 
-      features: ['AC', 'WiFi', 'TV'],
-      image: 'https://images.unsplash.com/photo-1581262177000-8c2d09dd1dc1?w=800&q=80',
-      status: 'approved'
-    },
-    { 
-      id: 12, 
-      title: 'New Year Eve Special',
-      type: 'Plane', 
-      from: 'Dhaka', 
-      to: 'Chittagong', 
-      date: 'Dec 31, 2025', 
-      time: '04:00 PM', 
-      seats: 10, 
-      price: 3200, 
-      features: ['WiFi', 'Food', 'Entertainment'],
-      image: 'https://images.unsplash.com/photo-1464037866556-6812c9d1c72e?w=800&q=80',
-      status: 'approved'
-    }
-  ];
 
   // Filter tickets based on search and filter
   const filteredTickets = allTickets.filter(ticket => {
@@ -232,6 +95,14 @@ const AllTickets = () => {
     setCurrentPage(pageNumber);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 section-spacing transition-colors relative overflow-hidden">

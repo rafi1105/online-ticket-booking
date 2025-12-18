@@ -7,6 +7,7 @@ import {
   FaHourglass, FaBus, FaTrain, FaShip, FaPlane, FaPlus
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import api from '../../utils/api';
 
 const MyTickets = () => {
   const { user } = useContext(AuthContext);
@@ -14,97 +15,44 @@ const MyTickets = () => {
   const [loading, setLoading] = useState(true);
   const [deleteModal, setDeleteModal] = useState({ show: false, ticketId: null });
 
-  // Sample ticket data (would come from API)
+  // Fetch tickets from API
   useEffect(() => {
-    const sampleTickets = [
-      {
-        id: 1,
-        title: 'Premium AC Coach',
-        image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80',
-        from: 'Dhaka',
-        to: 'Chittagong',
-        transportType: 'Bus',
-        price: 800,
-        quantity: 40,
-        availableSeats: 25,
-        departureDate: 'Dec 25, 2025',
-        departureTime: '10:00 AM',
-        perks: ['AC', 'WiFi', 'TV'],
-        status: 'approved',
-        createdAt: '2025-12-01T10:00:00Z'
-      },
-      {
-        id: 2,
-        title: 'Express Train Service',
-        image: 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
-        from: 'Dhaka',
-        to: 'Sylhet',
-        transportType: 'Train',
-        price: 600,
-        quantity: 60,
-        availableSeats: 45,
-        departureDate: 'Dec 28, 2025',
-        departureTime: '08:00 AM',
-        perks: ['AC', 'Food'],
-        status: 'approved',
-        createdAt: '2025-12-02T14:00:00Z'
-      },
-      {
-        id: 3,
-        title: 'Deluxe Cabin Launch',
-        image: 'https://images.unsplash.com/photo-1540946485063-a40da27545f8?w=800&q=80',
-        from: 'Dhaka',
-        to: 'Barisal',
-        transportType: 'Launch',
-        price: 500,
-        quantity: 30,
-        availableSeats: 30,
-        departureDate: 'Dec 30, 2025',
-        departureTime: '11:00 PM',
-        perks: ['Cabin', 'Food'],
-        status: 'pending',
-        createdAt: '2025-12-15T09:00:00Z'
-      },
-      {
-        id: 4,
-        title: 'Morning Flight Special',
-        image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80',
-        from: 'Dhaka',
-        to: "Cox's Bazar",
-        transportType: 'Plane',
-        price: 3500,
-        quantity: 20,
-        availableSeats: 15,
-        departureDate: 'Jan 05, 2026',
-        departureTime: '06:00 AM',
-        perks: ['WiFi', 'Food', 'Entertainment'],
-        status: 'rejected',
-        rejectionReason: 'Price seems too high for this route',
-        createdAt: '2025-12-10T11:00:00Z'
-      },
-      {
-        id: 5,
-        title: 'Night Express Bus',
-        image: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=800&q=80',
-        from: 'Dhaka',
-        to: 'Rangpur',
-        transportType: 'Bus',
-        price: 750,
-        quantity: 35,
-        availableSeats: 35,
-        departureDate: 'Jan 10, 2026',
-        departureTime: '09:00 PM',
-        perks: ['AC', 'Sleeper', 'Blanket'],
-        status: 'pending',
-        createdAt: '2025-12-18T08:00:00Z'
+    const fetchTickets = async () => {
+      if (!user?.uid) {
+        setLoading(false);
+        return;
       }
-    ];
 
-    setTimeout(() => {
-      setTickets(sampleTickets);
-      setLoading(false);
-    }, 500);
-  }, []);
+      try {
+        const response = await api.get(`/tickets/vendor/${user.uid}`);
+        const ticketsData = response.data.map(ticket => ({
+          id: ticket._id,
+          title: ticket.title,
+          image: ticket.image || 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80',
+          from: ticket.from,
+          to: ticket.to,
+          transportType: ticket.type,
+          price: ticket.price,
+          quantity: ticket.totalSeats || ticket.availableSeats,
+          availableSeats: ticket.availableSeats,
+          departureDate: ticket.departureDate,
+          departureTime: ticket.departureTime,
+          perks: ticket.features || ['AC'],
+          status: ticket.status || 'pending',
+          rejectionReason: ticket.rejectionReason,
+          createdAt: ticket.createdAt
+        }));
+        setTickets(ticketsData);
+      } catch (error) {
+        console.error('Error fetching tickets:', error);
+        toast.error('Failed to load tickets');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTickets();
+  }, [user]);
 
   const getTypeIcon = (type) => {
     const icons = {
@@ -144,9 +92,15 @@ const MyTickets = () => {
     setDeleteModal({ show: true, ticketId });
   };
 
-  const confirmDelete = () => {
-    setTickets(prev => prev.filter(t => t.id !== deleteModal.ticketId));
-    toast.success('Ticket deleted successfully');
+  const confirmDelete = async () => {
+    try {
+      await api.delete(`/tickets/${deleteModal.ticketId}`);
+      setTickets(prev => prev.filter(t => t.id !== deleteModal.ticketId));
+      toast.success('Ticket deleted successfully');
+    } catch (error) {
+      console.error('Error deleting ticket:', error);
+      toast.error('Failed to delete ticket');
+    }
     setDeleteModal({ show: false, ticketId: null });
   };
 
