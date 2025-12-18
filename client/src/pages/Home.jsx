@@ -309,7 +309,7 @@ const Home = () => {
       {/* Testimonials Section */}
       <section className="section-spacing bg-white dark:bg-gray-900 transition-colors relative overflow-hidden">
         {/* Background Image */}
-        <div className="absolute inset-0 opacity-100 dark:opacity-5">
+        <div className="absolute inset-0 opacity-100 dark:opacity-35">
           <img 
             src="/6345959.jpg" 
             alt="" 
@@ -443,7 +443,7 @@ const Home = () => {
             className="w-full h-full object-cover opacity-20"
           />
         </div>
-        <div className="absolute inset-0 bg-blue-400/20 dark:bg-blue-800/80"></div>
+        <div className="absolute inset-0 bg-blue-400/20 dark:bg-blue-800/30"></div>
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-0 left-0 w-64 md:w-96 h-64 md:h-96 bg-white rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-0 right-0 w-64 md:w-96 h-64 md:h-96 bg-purple-300 rounded-full blur-3xl animate-pulse delay-1000"></div>

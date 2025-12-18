@@ -159,47 +159,47 @@ const MyTickets = () => {
   }
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 lg:mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 dark:text-white mb-1 lg:mb-2">
             My Added Tickets
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400">
             Manage your ticket listings
           </p>
         </div>
         <Link 
           to="/dashboard/add-ticket"
-          className="mt-4 md:mt-0 btn btn-primary flex items-center gap-2 w-fit"
+          className="btn btn-primary btn-sm sm:btn flex items-center gap-2 w-fit"
         >
           <FaPlus />
-          Add New Ticket
+          <span className="hidden xs:inline">Add New</span> Ticket
         </Link>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Total Tickets</p>
-          <p className="text-2xl font-bold text-gray-800 dark:text-white">{tickets.length}</p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6 lg:mb-8">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-3 lg:p-4 shadow-lg">
+          <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400">Total Tickets</p>
+          <p className="text-xl lg:text-2xl font-bold text-gray-800 dark:text-white">{tickets.length}</p>
         </div>
-        <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 shadow-lg border border-green-200 dark:border-green-800">
-          <p className="text-sm text-green-600 dark:text-green-400">Approved</p>
-          <p className="text-2xl font-bold text-green-700 dark:text-green-400">
+        <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-3 lg:p-4 shadow-lg border border-green-200 dark:border-green-800">
+          <p className="text-xs lg:text-sm text-green-600 dark:text-green-400">Approved</p>
+          <p className="text-xl lg:text-2xl font-bold text-green-700 dark:text-green-400">
             {tickets.filter(t => t.status === 'approved').length}
           </p>
         </div>
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-4 shadow-lg border border-yellow-200 dark:border-yellow-800">
-          <p className="text-sm text-yellow-600 dark:text-yellow-400">Pending</p>
-          <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-3 lg:p-4 shadow-lg border border-yellow-200 dark:border-yellow-800">
+          <p className="text-xs lg:text-sm text-yellow-600 dark:text-yellow-400">Pending</p>
+          <p className="text-xl lg:text-2xl font-bold text-yellow-700 dark:text-yellow-400">
             {tickets.filter(t => t.status === 'pending').length}
           </p>
         </div>
-        <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 shadow-lg border border-red-200 dark:border-red-800">
-          <p className="text-sm text-red-600 dark:text-red-400">Rejected</p>
-          <p className="text-2xl font-bold text-red-700 dark:text-red-400">
+        <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-3 lg:p-4 shadow-lg border border-red-200 dark:border-red-800">
+          <p className="text-xs lg:text-sm text-red-600 dark:text-red-400">Rejected</p>
+          <p className="text-xl lg:text-2xl font-bold text-red-700 dark:text-red-400">
             {tickets.filter(t => t.status === 'rejected').length}
           </p>
         </div>
@@ -207,63 +207,63 @@ const MyTickets = () => {
 
       {/* Tickets Grid */}
       {tickets.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
           {tickets.map((ticket) => {
             const statusConfig = getStatusConfig(ticket.status);
 
             return (
               <div 
                 key={ticket.id}
-                className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all group"
               >
                 {/* Image */}
-                <div className="relative h-40 overflow-hidden">
+                <div className="relative h-32 sm:h-40 overflow-hidden">
                   <img
                     src={ticket.image}
                     alt={ticket.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                   
                   {/* Transport Type Badge */}
-                  <div className="absolute top-3 left-3">
-                    <span className="flex items-center gap-2 px-3 py-1 bg-white/90 dark:bg-gray-800/90 rounded-full text-sm font-medium text-gray-800 dark:text-white">
+                  <div className="absolute top-2 sm:top-3 left-2 sm:left-3">
+                    <span className="flex items-center gap-1.5 px-2 sm:px-3 py-1 bg-white/90 dark:bg-gray-800/90 rounded-full text-xs sm:text-sm font-medium text-gray-800 dark:text-white">
                       {getTypeIcon(ticket.transportType)}
-                      {ticket.transportType}
+                      <span className="hidden xs:inline">{ticket.transportType}</span>
                     </span>
                   </div>
 
                   {/* Status Badge */}
-                  <div className="absolute top-3 right-3">
-                    <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold ${statusConfig.bg} ${statusConfig.text}`}>
+                  <div className="absolute top-2 sm:top-3 right-2 sm:right-3">
+                    <span className={`flex items-center gap-1 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold ${statusConfig.bg} ${statusConfig.text}`}>
                       {statusConfig.icon}
-                      {statusConfig.label}
+                      <span className="hidden xs:inline">{statusConfig.label}</span>
                     </span>
                   </div>
 
                   {/* Price */}
-                  <div className="absolute bottom-3 right-3">
-                    <span className="px-3 py-1 bg-blue-600 text-white rounded-lg font-bold">
+                  <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-3">
+                    <span className="px-2 sm:px-3 py-1 bg-blue-600 text-white rounded-lg font-bold text-sm sm:text-base">
                       ৳{ticket.price}
                     </span>
                   </div>
                 </div>
 
                 {/* Content */}
-                <div className="p-5">
+                <div className="p-4 lg:p-5">
                   {/* Title */}
-                  <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">
+                  <h3 className="text-base lg:text-lg font-bold text-gray-800 dark:text-white mb-2 truncate">
                     {ticket.title}
                   </h3>
 
                   {/* Route */}
-                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 mb-3">
-                    <FaMapMarkerAlt className="text-blue-600" />
-                    <span>{ticket.from} → {ticket.to}</span>
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
+                    <FaMapMarkerAlt className="text-blue-600 flex-shrink-0" />
+                    <span className="truncate">{ticket.from} → {ticket.to}</span>
                   </div>
 
                   {/* Date & Time */}
-                  <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-3">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-3">
                     <span className="flex items-center gap-1">
                       <FaCalendarAlt />
                       {ticket.departureDate}
@@ -278,22 +278,22 @@ const MyTickets = () => {
                   <div className="flex items-center justify-between py-3 border-t border-gray-200 dark:border-gray-700 mb-3">
                     <div>
                       <p className="text-xs text-gray-500 dark:text-gray-400">Available / Total</p>
-                      <p className="font-semibold text-gray-800 dark:text-white">
+                      <p className="font-semibold text-sm lg:text-base text-gray-800 dark:text-white">
                         {ticket.availableSeats} / {ticket.quantity}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-gray-500 dark:text-gray-400">Sold</p>
-                      <p className="font-semibold text-green-600">
+                      <p className="font-semibold text-sm lg:text-base text-green-600">
                         {ticket.quantity - ticket.availableSeats}
                       </p>
                     </div>
                   </div>
 
                   {/* Perks */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {ticket.perks.map((perk, idx) => (
-                      <span key={idx} className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3 sm:mb-4">
+                    {ticket.perks.slice(0, 3).map((perk, idx) => (
+                      <span key={idx} className="text-xs px-2 py-0.5 sm:py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">
                         {perk}
                       </span>
                     ))}
@@ -301,8 +301,8 @@ const MyTickets = () => {
 
                   {/* Rejection Reason */}
                   {ticket.status === 'rejected' && ticket.rejectionReason && (
-                    <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                      <p className="text-xs text-red-600 dark:text-red-400">
+                    <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                      <p className="text-xs text-red-600 dark:text-red-400 line-clamp-2">
                         <strong>Reason:</strong> {ticket.rejectionReason}
                       </p>
                     </div>
@@ -312,26 +312,26 @@ const MyTickets = () => {
                   <div className="flex gap-2">
                     <Link 
                       to={`/ticket/${ticket.id}`}
-                      className="flex-1 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                      className="flex-1 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg font-medium text-sm flex items-center justify-center gap-1 sm:gap-2 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
                     >
                       <FaEye />
-                      View
+                      <span className="hidden xs:inline">View</span>
                     </Link>
                     <button 
                       disabled={ticket.status === 'rejected'}
-                      className={`flex-1 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors ${
+                      className={`flex-1 py-2 rounded-lg font-medium text-sm flex items-center justify-center gap-1 sm:gap-2 transition-colors ${
                         ticket.status === 'rejected'
                           ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
                           : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
                       }`}
                     >
                       <FaEdit />
-                      Update
+                      <span className="hidden xs:inline">Update</span>
                     </button>
                     <button 
                       onClick={() => handleDelete(ticket.id)}
                       disabled={ticket.status === 'rejected'}
-                      className={`py-2 px-3 rounded-lg font-medium flex items-center justify-center transition-colors ${
+                      className={`py-2 px-2 sm:px-3 rounded-lg font-medium flex items-center justify-center transition-colors ${
                         ticket.status === 'rejected'
                           ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
                           : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50'
